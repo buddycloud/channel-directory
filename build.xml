@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="jar" name="channeldirectory">
+	<property name="jar.dir" value="target" />
+	<property name="classes.dir" value="bin" />
+	
+	<target name="jar">
+		<mkdir dir="${jar.dir}" />
+		<jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+		</jar>
+	</target>
+</project>
