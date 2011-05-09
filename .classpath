@@ -2,8 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry kind="lib" path="lib/tinder-1.2.2.jar"/>
-	<classpathentry kind="lib" path="lib/whack.jar"/>
+	<classpathentry kind="lib" path="lib/tinder-1.2.2.jar" sourcepath="/tinder"/>
+	<classpathentry kind="lib" path="lib/whack.jar" sourcepath="/whack"/>
 	<classpathentry kind="lib" path="lib/smack.jar"/>
 	<classpathentry kind="lib" path="lib/smackx.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-api-1.5.8.jar"/>
