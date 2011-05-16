@@ -12,6 +12,7 @@ import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.handler.QueryHandler;
 import com.buddycloud.channeldirectory.handler.nearby.NearbyQueryHandler;
+import com.buddycloud.channeldirectory.rsm.RSM;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -65,7 +66,9 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 	
 	@Override 
 	protected String[] discoInfoFeatureNamespaces() {
-		return (new ArrayList<String>(queryHandlers.keySet()).toArray(new String[]{}));
+		ArrayList<String> namespaces = new ArrayList<String>(queryHandlers.keySet());
+		namespaces.add(RSM.NAMESPACE);
+		return (namespaces.toArray(new String[]{}));
 	}
 
 	@Override 

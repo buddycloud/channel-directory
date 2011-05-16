@@ -1,13 +1,13 @@
 package com.buddycloud.channeldirectory.handler.nearby;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 public class NearbyFakeData {
 
 	public static List<NearbyObject> createData() {
 		
-		List<NearbyObject> fakeList = new LinkedList<NearbyObject>();
+		List<NearbyObject> fakeList = new ArrayList<NearbyObject>();
 		
 		NearbyObject object1 = new NearbyObject();
 		object1.setGeolocation(new Geolocation(45.44, 12.33));

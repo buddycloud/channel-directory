@@ -8,6 +8,8 @@ import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.handler.QueryHandler;
+import com.buddycloud.channeldirectory.rsm.RSM;
+import com.buddycloud.channeldirectory.rsm.RSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -55,11 +57,22 @@ public class NearbyQueryHandler implements QueryHandler {
 
 	private IQ createIQResponse(IQ iq, List<NearbyObject> nearbyObjects) {
 		IQ result = IQ.createResultIQ(iq);
-		Element queryElement = result.getElement().addElement("query", getNamespace());
-		Element itemsElement = queryElement.addElement("items");
 		
-		for (NearbyObject nearbyObject : nearbyObjects) {
-			Element itemElement = itemsElement.addElement("item");
+		RSM rsm = RSMUtils.parseRSM(iq.getElement().element("query"));
+		
+		List<NearbyObject> filteredNearbyObjects = null;
+		
+		try {
+			filteredNearbyObjects = RSMUtils.filterRSMResponse(
+					nearbyObjects, rsm);
+		} catch (IllegalArgumentException e) {
+			return XMPPUtils.errorRSM(iq, LOGGER);
+		}
+		
+		Element queryElement = result.getElement().addElement("query", getNamespace());
+		
+		for (NearbyObject nearbyObject : filteredNearbyObjects) {
+			Element itemElement = queryElement.addElement("item");
 			itemElement.addAttribute("jid", nearbyObject.getJid());
 			itemElement.addAttribute("type", nearbyObject.getType());
 			
@@ -72,6 +85,8 @@ public class NearbyQueryHandler implements QueryHandler {
 			geoElement.addElement("lon").setText(Double.valueOf(
 					nearbyObject.getGeolocation().getLng()).toString());
 		}
+		
+		RSMUtils.appendRSMElement(queryElement, rsm);
 		
 		return result;
 	}
