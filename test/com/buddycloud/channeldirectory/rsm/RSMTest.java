@@ -6,7 +6,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.buddycloud.channeldirectory.handler.QueryResponseObject;
+import com.buddycloud.channeldirectory.handler.response.Content;
 
 public class RSMTest {
 
@@ -15,7 +15,7 @@ public class RSMTest {
 	@Test
 	public void testNoRSMInfo() {
 		RSM rsm = new RSM();
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(TEST_DATA_SIZE, response.size());
@@ -29,7 +29,7 @@ public class RSMTest {
 	public void testLimitToResultSet() {
 		RSM rsm = new RSM();
 		rsm.setMax(10);
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(10, response.size());
@@ -44,7 +44,7 @@ public class RSMTest {
 		RSM rsm = new RSM();
 		rsm.setMax(10);
 		rsm.setAfter("jid9");
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(10, response.size());
@@ -59,7 +59,7 @@ public class RSMTest {
 		RSM rsm = new RSM();
 		rsm.setMax(10);
 		rsm.setAfter("jid19");
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(0, response.size());
@@ -73,7 +73,7 @@ public class RSMTest {
 		RSM rsm = new RSM();
 		rsm.setMax(10);
 		rsm.setBefore("jid15");
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(10, response.size());
@@ -96,7 +96,7 @@ public class RSMTest {
 		RSM rsm = new RSM();
 		rsm.setMax(10);
 		rsm.setBefore("");
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(10, response.size());
@@ -111,7 +111,7 @@ public class RSMTest {
 		RSM rsm = new RSM();
 		rsm.setMax(10);
 		rsm.setIndex(5);
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(10, response.size());
@@ -125,7 +125,7 @@ public class RSMTest {
 	public void testGettingItemCount() {
 		RSM rsm = new RSM();
 		rsm.setMax(0);
-		List<QueryResponseObject> response = RSMUtils.filterRSMResponse(
+		List<Content> response = RSMUtils.filterRSMResponse(
 				createTestData(), rsm);
 		
 		Assert.assertEquals(0, response.size());
@@ -134,10 +134,10 @@ public class RSMTest {
 		Assert.assertEquals(null, rsm.getLast());
 	}
 	
-	private static List<QueryResponseObject> createTestData() {
-		List<QueryResponseObject> objects = new LinkedList<QueryResponseObject>();
+	private static List<Content> createTestData() {
+		List<Content> objects = new LinkedList<Content>();
 		for (int i = 0; i < TEST_DATA_SIZE; i++) {
-			QueryResponseObject object = new QueryResponseObject();
+			Content object = new Content();
 			object.setJid("jid" + i);
 			objects.add(object);
 		}

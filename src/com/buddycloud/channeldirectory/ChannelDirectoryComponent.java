@@ -11,6 +11,8 @@ import org.xmpp.component.AbstractComponent;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.handler.QueryHandler;
+import com.buddycloud.channeldirectory.handler.content.ContentQueryHandler;
+import com.buddycloud.channeldirectory.handler.metadata.MetadataQueryHandler;
 import com.buddycloud.channeldirectory.handler.nearby.NearbyQueryHandler;
 import com.buddycloud.channeldirectory.rsm.RSM;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
@@ -83,6 +85,8 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 
 	private void createHandlers() {
 		addHandler(new NearbyQueryHandler());
+		addHandler(new MetadataQueryHandler());
+		addHandler(new ContentQueryHandler());
 	}
 
 	private void addHandler(QueryHandler queryHandler) {

@@ -1,24 +1,33 @@
-package com.buddycloud.channeldirectory.handler.nearby;
+package com.buddycloud.channeldirectory.handler.response;
 
-import com.buddycloud.channeldirectory.handler.QueryResponseObject;
 
 /**
  * Represents a XMPP content (identified by its jid) 
- * with a Lat/Lng pair. 
+ * with a type, title and Lat/Lng pair. 
  * 
- * @see NearbyQueryHandler
+ * @see Geolocation
  * 
  */
-public class NearbyObject extends QueryResponseObject {
+public class Content {
 
 	/**
 	 * Type constant for channels.
 	 */
 	public static final String TYPE_CHANNEL = "channel";
 	
+	private String jid;
 	private String type;
 	private String title;
+	
 	private Geolocation geolocation;
+	
+	public void setGeolocation(Geolocation geolocation) {
+		this.geolocation = geolocation;
+	}
+
+	public Geolocation getGeolocation() {
+		return geolocation;
+	}
 	
 	public void setType(String type) {
 		this.type = type;
@@ -35,13 +44,13 @@ public class NearbyObject extends QueryResponseObject {
 	public String getTitle() {
 		return title;
 	}
-
-	public void setGeolocation(Geolocation geolocation) {
-		this.geolocation = geolocation;
+	
+	public String getJid() {
+		return jid;
 	}
 
-	public Geolocation getGeolocation() {
-		return geolocation;
+	public void setJid(String jid) {
+		this.jid = jid;
 	}
 	
 }

@@ -1,4 +1,4 @@
-package com.buddycloud.channeldirectory.handler.nearby;
+package com.buddycloud.channeldirectory.handler.response;
 
 /**
  * Represents a Latitude/Longitude location pair.

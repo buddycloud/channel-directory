@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.dom4j.Element;
 
-import com.buddycloud.channeldirectory.handler.QueryResponseObject;
+import com.buddycloud.channeldirectory.handler.response.Content;
 
 /**
  * It is responsible for providing utility methods related to RSM format 
@@ -86,7 +86,7 @@ public class RSMUtils {
 	 * @throws IllegalArgumentException If the item specified by the requesting 
 	 * 			entity via the UID in the <after/> or <before/> element does not exist
 	 */
-	public static <T extends QueryResponseObject> List<T> filterRSMResponse(
+	public static <T extends Content> List<T> filterRSMResponse(
 			List<T> objects, RSM rsm)
 			throws IllegalArgumentException {
 		
