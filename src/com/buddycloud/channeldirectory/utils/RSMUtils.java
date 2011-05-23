@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.dom4j.Element;
 
-import com.buddycloud.channeldirectory.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.handler.response.ContentData;
 import com.buddycloud.channeldirectory.rsm.RSM;
 
