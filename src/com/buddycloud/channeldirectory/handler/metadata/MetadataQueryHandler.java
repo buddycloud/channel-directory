@@ -5,9 +5,9 @@ import java.util.List;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
-import com.buddycloud.channeldirectory.handler.AbstractQueryHandler;
-import com.buddycloud.channeldirectory.handler.response.Content;
-import com.buddycloud.channeldirectory.handler.response.FakeData;
+import com.buddycloud.channeldirectory.handler.ChannelQueryHandler;
+import com.buddycloud.channeldirectory.handler.response.ChannelData;
+import com.buddycloud.channeldirectory.handler.response.FakeDataGenerator;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -16,7 +16,7 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  * this handle can return channels related to this search.
  *  
  */
-public class MetadataQueryHandler extends AbstractQueryHandler {
+public class MetadataQueryHandler extends ChannelQueryHandler {
 
 	public MetadataQueryHandler() {
 		super("urn:oslo:metadatasearch");
@@ -40,13 +40,13 @@ public class MetadataQueryHandler extends AbstractQueryHandler {
 					getLogger());
 		}
 		
-		List<Content> nearbyObjects = findObjectsByMetadata(search);
+		List<ChannelData> nearbyObjects = findObjectsByMetadata(search);
 		
 		return createIQResponse(iq, nearbyObjects);
 	}
 
-	private List<Content> findObjectsByMetadata(String search) {
-		return FakeData.createData();
+	private List<ChannelData> findObjectsByMetadata(String search) {
+		return FakeDataGenerator.createFakeChannels();
 	}
 
 }

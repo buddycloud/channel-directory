@@ -6,9 +6,9 @@ import org.dom4j.Attribute;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
-import com.buddycloud.channeldirectory.handler.AbstractQueryHandler;
-import com.buddycloud.channeldirectory.handler.response.Content;
-import com.buddycloud.channeldirectory.handler.response.FakeData;
+import com.buddycloud.channeldirectory.handler.ChannelQueryHandler;
+import com.buddycloud.channeldirectory.handler.response.ChannelData;
+import com.buddycloud.channeldirectory.handler.response.FakeDataGenerator;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -17,7 +17,7 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  * this handle can return channels close to user location.
  *  
  */
-public class NearbyQueryHandler extends AbstractQueryHandler {
+public class NearbyQueryHandler extends ChannelQueryHandler {
 
 	public NearbyQueryHandler() {
 		super("urn:oslo:nearbyobjects");
@@ -51,13 +51,13 @@ public class NearbyQueryHandler extends AbstractQueryHandler {
 		double lat = Double.valueOf(latAtt.getValue());
 		double lng = Double.valueOf(lngAtt.getValue());
 		
-		List<Content> nearbyObjects = findNearbyObjects(lat, lng);
+		List<ChannelData> nearbyObjects = findNearbyObjects(lat, lng);
 		
 		return createIQResponse(iq, nearbyObjects);
 	}
 
-	private List<Content> findNearbyObjects(double lat, double lng) {
-		return FakeData.createData();
+	private List<ChannelData> findNearbyObjects(double lat, double lng) {
+		return FakeDataGenerator.createFakeChannels();
 	}
 
 }

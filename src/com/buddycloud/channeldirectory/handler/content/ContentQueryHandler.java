@@ -5,18 +5,18 @@ import java.util.List;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
-import com.buddycloud.channeldirectory.handler.AbstractQueryHandler;
-import com.buddycloud.channeldirectory.handler.response.Content;
-import com.buddycloud.channeldirectory.handler.response.FakeData;
+import com.buddycloud.channeldirectory.handler.PostQueryHandler;
+import com.buddycloud.channeldirectory.handler.response.FakeDataGenerator;
+import com.buddycloud.channeldirectory.handler.response.PostData;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
  * Handles queries for content posts.
  * A query should contain a content query string, so
- * this handle can return channels related to this search.
+ * this handle can return channel posts related to this search.
  *  
  */
-public class ContentQueryHandler extends AbstractQueryHandler {
+public class ContentQueryHandler extends PostQueryHandler {
 
 	public ContentQueryHandler() {
 		super("urn:oslo:contentsearch");
@@ -40,13 +40,13 @@ public class ContentQueryHandler extends AbstractQueryHandler {
 					getLogger());
 		}
 		
-		List<Content> nearbyObjects = findObjectsByContent(search);
+		List<PostData> relatedPosts = findObjectsByContent(search);
 		
-		return createIQResponse(iq, nearbyObjects);
+		return createIQResponse(iq, relatedPosts);
 	}
 
-	private List<Content> findObjectsByContent(String search) {
-		return FakeData.createData();
+	private List<PostData> findObjectsByContent(String search) {
+		return FakeDataGenerator.createFakePosts();
 	}
 
 }

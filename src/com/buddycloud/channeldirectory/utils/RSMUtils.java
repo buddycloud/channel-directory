@@ -1,11 +1,13 @@
-package com.buddycloud.channeldirectory.rsm;
+package com.buddycloud.channeldirectory.utils;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import org.dom4j.Element;
 
-import com.buddycloud.channeldirectory.handler.response.Content;
+import com.buddycloud.channeldirectory.handler.response.ChannelData;
+import com.buddycloud.channeldirectory.handler.response.ContentData;
+import com.buddycloud.channeldirectory.rsm.RSM;
 
 /**
  * It is responsible for providing utility methods related to RSM format 
@@ -86,7 +88,7 @@ public class RSMUtils {
 	 * @throws IllegalArgumentException If the item specified by the requesting 
 	 * 			entity via the UID in the <after/> or <before/> element does not exist
 	 */
-	public static <T extends Content> List<T> filterRSMResponse(
+	public static <T extends ContentData> List<T> filterRSMResponse(
 			List<T> objects, RSM rsm)
 			throws IllegalArgumentException {
 		
@@ -103,11 +105,11 @@ public class RSMUtils {
 			
 			int i = 0;
 			for (T object : objects) {
-				if (after != null && after.equals(object.getJid())) {
+				if (after != null && after.equals(object.getId())) {
 					initialIndex = i + 1;
 					afterItemFound = true;
 				}
-				if (before != null && before.equals(object.getJid())) {
+				if (before != null && before.equals(object.getId())) {
 					lastIndex = i;
 					beforeItemFound = true;
 				}
@@ -141,8 +143,8 @@ public class RSMUtils {
 		rsm.setIndex(initialIndex);
 		
 		if (!filteredList.isEmpty()) {
-			rsm.setFirst(filteredList.get(0).getJid());
-			rsm.setLast(filteredList.get(filteredList.size() - 1).getJid());
+			rsm.setFirst(filteredList.get(0).getId());
+			rsm.setLast(filteredList.get(filteredList.size() - 1).getId());
 		}
 		
 		return filteredList;

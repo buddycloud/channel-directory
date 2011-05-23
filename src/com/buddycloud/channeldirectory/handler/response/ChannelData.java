@@ -2,21 +2,23 @@ package com.buddycloud.channeldirectory.handler.response;
 
 
 /**
- * Represents a XMPP content (identified by its jid) 
- * with a type, title and Lat/Lng pair. 
+ * Represents a XMPP channel (identified by its jid) 
+ * with a title and a geolocation attribute. 
  * 
  * @see Geolocation
  * 
  */
-public class Content {
+public class ChannelData extends ContentData {
 
 	/**
 	 * Type constant for channels.
 	 */
-	public static final String TYPE_CHANNEL = "channel";
+	private static final String TYPE_CHANNEL = "channel";
 	
-	private String jid;
-	private String type;
+	public ChannelData() {
+		setType(TYPE_CHANNEL);
+	}
+	
 	private String title;
 	
 	private Geolocation geolocation;
@@ -29,14 +31,6 @@ public class Content {
 		return geolocation;
 	}
 	
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public String getType() {
-		return type;
-	}
-
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -44,13 +38,5 @@ public class Content {
 	public String getTitle() {
 		return title;
 	}
-	
-	public String getJid() {
-		return jid;
-	}
 
-	public void setJid(String jid) {
-		this.jid = jid;
-	}
-	
 }
