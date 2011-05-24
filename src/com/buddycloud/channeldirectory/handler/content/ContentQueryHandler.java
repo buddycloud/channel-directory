@@ -1,6 +1,7 @@
 package com.buddycloud.channeldirectory.handler.content;
 
 import java.util.List;
+import java.util.Properties;
 
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
@@ -18,8 +19,8 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  */
 public class ContentQueryHandler extends PostQueryHandler {
 
-	public ContentQueryHandler() {
-		super("urn:oslo:contentsearch");
+	public ContentQueryHandler(Properties properties) {
+		super("urn:oslo:contentsearch", properties);
 	}
 
 	@Override

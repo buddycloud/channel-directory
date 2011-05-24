@@ -1,6 +1,7 @@
 package com.buddycloud.channeldirectory.handler.nearby;
 
 import java.util.List;
+import java.util.Properties;
 
 import org.dom4j.Attribute;
 import org.dom4j.Element;
@@ -19,8 +20,8 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  */
 public class NearbyQueryHandler extends ChannelQueryHandler {
 
-	public NearbyQueryHandler() {
-		super("urn:oslo:nearbyobjects");
+	public NearbyQueryHandler(Properties properties) {
+		super("urn:oslo:nearbyobjects", properties);
 	}
 
 	@Override

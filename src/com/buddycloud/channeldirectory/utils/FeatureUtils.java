@@ -49,7 +49,7 @@ public class FeatureUtils {
 	public static boolean addAttribute(Set<String> options,
 			Element parentElement, String key, String value) {
 		if (options.contains(key) || options.isEmpty()) {
-			parentElement.addAttribute("key", value);
+			parentElement.addAttribute(key, value);
 			return true;
 		}
 		return false;
@@ -69,7 +69,7 @@ public class FeatureUtils {
 	public static Element addElement(Set<String> options,
 			Element parentElement, String key, String value) {
 		if (options.contains(key) || options.isEmpty()) {
-			Element el = parentElement.addElement("key");
+			Element el = parentElement.addElement(key);
 			el.setText(value);
 			return el; 
 		}
@@ -90,7 +90,7 @@ public class FeatureUtils {
 	public static Element addNamespaceElement(Set<String> options,
 			Element parentElement, String key, String namespace) {
 		if (options.contains(key) || options.isEmpty()) {
-			return parentElement.addElement("key", namespace);
+			return parentElement.addElement(key, namespace);
 		}
 		return null;
 	}

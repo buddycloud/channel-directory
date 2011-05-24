@@ -3,6 +3,7 @@ package com.buddycloud.channeldirectory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.dom4j.Element;
@@ -30,7 +31,11 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 	private static final Logger LOGGER = Logger.getLogger(ChannelDirectoryComponent.class);
 	
 	private final Map<String, QueryHandler> queryHandlers = new HashMap<String, QueryHandler>();
+	private final Properties properties;
 
+	public ChannelDirectoryComponent(Properties properties) {
+		this.properties = properties;
+	}
 	
 	@Override
 	public String getDescription() {
@@ -84,9 +89,9 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 	}
 
 	private void createHandlers() {
-		addHandler(new NearbyQueryHandler());
-		addHandler(new MetadataQueryHandler());
-		addHandler(new ContentQueryHandler());
+		addHandler(new NearbyQueryHandler(properties));
+		addHandler(new MetadataQueryHandler(properties));
+		addHandler(new ContentQueryHandler(properties));
 	}
 
 	private void addHandler(QueryHandler queryHandler) {

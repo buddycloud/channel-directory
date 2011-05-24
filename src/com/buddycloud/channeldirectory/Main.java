@@ -42,7 +42,8 @@ public class Main {
 				configuration.getProperty("xmpp.secretkey"));
 		
 		try {
-			componentManager.addComponent(subdomain, new ChannelDirectoryComponent());
+			componentManager.addComponent(subdomain, 
+					new ChannelDirectoryComponent(configuration));
 		} catch (ComponentException e) {
 			LOGGER.fatal("Component could not be started.", e);
 		}

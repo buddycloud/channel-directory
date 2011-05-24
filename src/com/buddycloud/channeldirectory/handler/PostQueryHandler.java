@@ -1,6 +1,7 @@
 package com.buddycloud.channeldirectory.handler;
 
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import org.dom4j.Element;
@@ -20,8 +21,8 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  */
 public abstract class PostQueryHandler extends AbstractQueryHandler {
 
-	public PostQueryHandler(String namespace) {
-		super(namespace);
+	public PostQueryHandler(String namespace, Properties properties) {
+		super(namespace, properties);
 	}
 
 	protected IQ createIQResponse(IQ iq, List<PostData> allContent) {
