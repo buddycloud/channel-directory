@@ -31,7 +31,7 @@ public class MetadataQueryHandler extends ChannelQueryHandler {
 	private static final String SOLR_CHANNELCORE_PROP = "solr.channelcore";
 
 	public MetadataQueryHandler(Properties properties) {
-		super("urn:oslo:metadatasearch", properties);
+		super("http://buddycloud.com/channel_directory/metadata_query", properties);
 	}
 
 	@Override

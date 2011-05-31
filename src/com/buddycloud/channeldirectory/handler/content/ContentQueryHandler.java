@@ -20,7 +20,7 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
 public class ContentQueryHandler extends PostQueryHandler {
 
 	public ContentQueryHandler(Properties properties) {
-		super("urn:oslo:contentsearch", properties);
+		super("http://buddycloud.com/channel_directory/content_query", properties);
 	}
 
 	@Override

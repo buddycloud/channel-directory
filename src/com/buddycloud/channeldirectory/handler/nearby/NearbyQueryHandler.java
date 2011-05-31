@@ -21,7 +21,7 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
 public class NearbyQueryHandler extends ChannelQueryHandler {
 
 	public NearbyQueryHandler(Properties properties) {
-		super("urn:oslo:nearbyobjects", properties);
+		super("http://buddycloud.com/channel_directory/nearby_query", properties);
 	}
 
 	@Override
