@@ -67,18 +67,52 @@
         <filter class="solr.PorterStemFilterFactory"/>
       </analyzer>
     </fieldType>
+    
+    <!-- The format for this date field is of the form 1995-12-31T23:59:59Z, and
+         is a more restricted form of the canonical representation of dateTime
+         http://www.w3.org/TR/xmlschema-2/#dateTime    
+         The trailing "Z" designates UTC time and is mandatory.
+         Optional fractional seconds are allowed: 1995-12-31T23:59:59.999Z
+         All other components are mandatory.
+
+         Expressions can also be used to denote calculations that should be
+         performed relative to "NOW" to determine the value, ie...
+
+               NOW/HOUR
+                  ... Round to the start of the current hour
+               NOW-1DAY
+                  ... Exactly 1 day prior to now
+               NOW/DAY+6MONTHS+3DAYS
+                  ... 6 months and 3 days in the future from the start of
+                      the current day
+                      
+         Consult the DateField javadocs for more information.
+
+         Note: For faster range queries, consider the tdate type
+      -->
+    <fieldType name="date" class="solr.TrieDateField" omitNorms="true" precisionStep="0" positionIncrementGap="0"/>
+    
   </types>
 
  <fields>   
   <!-- general -->
-  <field name="id"      type="string"    indexed="true"  stored="true"  multiValued="false" required="true"/>
-  <field name="author"  type="string"    indexed="true"  stored="true"  multiValued="false" required="true"/>
-  <field name="content" type="text"   	 indexed="true"  stored="true"  multiValued="false" required="true"/> 
-  <field name="fullid"  type="string"    indexed="true"  stored="true"  multiValued="false" required="true"/>
-  <field name="geoloc"     type="location"  indexed="true"  stored="true"  multiValued="false" />
-  <field name="inreplyto"  type="string"    indexed="true"  stored="true"  multiValued="false"/>
-  <field name="published"  type="string"    indexed="true"  stored="true"  multiValued="false"/>
-  <field name="updated"    type="string"    indexed="true"  stored="true"  multiValued="false"/>
+  <field name="id" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+  <field name="author" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+  <field name="affiliation" type="string" indexed="true" stored="true" multiValued="false"/>
+  
+  <field name="content" type="text" indexed="true" stored="true" multiValued="false" required="true"/> 
+ 
+  <field name="leafnode_name" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="leafnode_id" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="message_id" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="inreplyto" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="updated" type="date" indexed="true" stored="true"  multiValued="false"/>
+  
+  <field name="geoloc" type="location" indexed="true" stored="true" multiValued="false" />
+  <field name="geoloc_text" type="text" indexed="true" stored="true" multiValued="false" />
+  
+  <field name="useragent_id" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="useragent_version" type="string" indexed="true" stored="true" multiValued="false"/>
   
   <!-- catchall field, containing all other searchable text fields (implemented
         via copyField further on in this schema  -->
@@ -103,11 +137,17 @@
 
  <copyField source="id" dest="text"/>
  <copyField source="author" dest="text"/>
+ 
  <copyField source="content" dest="text"/>
- <copyField source="fullid" dest="text"/>
- <copyField source="geoloc" dest="text"/>
+ 
+ <copyField source="leafnode_name" dest="text"/>
+ <copyField source="leafnode_id" dest="text"/>
+ <copyField source="message_id" dest="text"/>
+ 
  <copyField source="inreplyto" dest="text"/>
- <copyField source="published" dest="text"/>
- <copyField source="updated" dest="text"/>
+
+ <copyField source="geoloc" dest="text"/>
+ <copyField source="geoloc_text" dest="text"/>
+
 </schema>
 
