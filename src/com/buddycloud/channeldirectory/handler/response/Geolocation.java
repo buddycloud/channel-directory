@@ -1,35 +1,47 @@
 package com.buddycloud.channeldirectory.handler.response;
 
 /**
- * Represents a Latitude/Longitude location pair.
+ * Represents a Latitude/Longitude location pair, 
+ * and a text representation of a location
  * 
  */
 public class Geolocation {
 
 	public static final String NAMESPACE = "http://jabber.org/protocol/geoloc";
 	
-	private double lat;
-	private double lng;
+	private Double lat;
+	private Double lng;
+	private String text;
 	
-	public Geolocation(double lat, double lng) {
+	public Geolocation() {}
+	
+	public Geolocation(Double lat, Double lng) {
 		this.lat = lat;
 		this.lng = lng;
 	}
 
-	public void setLat(double lat) {
+	public void setLat(Double lat) {
 		this.lat = lat;
 	}
 	
-	public double getLat() {
+	public Double getLat() {
 		return lat;
 	}
 
-	public void setLng(double lng) {
+	public void setLng(Double lng) {
 		this.lng = lng;
 	}
 
-	public double getLng() {
+	public Double getLng() {
 		return lng;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+	}
+
+	public String getText() {
+		return text;
 	}
 	
 }

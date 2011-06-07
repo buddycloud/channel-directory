@@ -70,7 +70,9 @@ public class FeatureUtils {
 			Element parentElement, String key, String value) {
 		if (options.contains(key) || options.isEmpty()) {
 			Element el = parentElement.addElement(key);
-			el.setText(value);
+			if (value != null) {
+				el.setText(value);
+			}
 			return el; 
 		}
 		return null;

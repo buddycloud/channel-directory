@@ -1,5 +1,7 @@
 package com.buddycloud.channeldirectory.handler;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -21,6 +23,12 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  */
 public abstract class PostQueryHandler extends AbstractQueryHandler {
 
+	private static final String ATOM_NAMESPACE = "http://www.w3.org/2005/Atom";
+	private static final String THREAD_NAMESPACE = "http://purl.org/syndication/thread/1.0";
+	
+	private static final DateFormat DATE_FORMAT = new SimpleDateFormat(
+			"yyyy-MM-dd'T'HH:mm:ssZ");
+	
 	public PostQueryHandler(String namespace, Properties properties) {
 		super(namespace, properties);
 	}
@@ -44,27 +52,71 @@ public abstract class PostQueryHandler extends AbstractQueryHandler {
 		
 		Element queryElement = result.getElement().addElement("query", getNamespace());
 		
-		for (PostData nearbyObject : filteredObjects) {
+		for (PostData postObject : filteredObjects) {
 			Element itemElement = queryElement.addElement("item");
 			
 			FeatureUtils.addAttribute(options, itemElement, "id",
-					nearbyObject.getId());
+					postObject.getId());
 			FeatureUtils.addAttribute(options, itemElement, "type",
-					nearbyObject.getType());
-
-			Element geoElement = FeatureUtils.addNamespaceElement(
-					options, itemElement, "geoloc", Geolocation.NAMESPACE);
+					postObject.getType());
 			
-			if (geoElement != null) {
-				geoElement.addElement("lat").setText(Double.valueOf(
-						nearbyObject.getGeolocation().getLat()).toString());
-				geoElement.addElement("lon").setText(Double.valueOf(
-						nearbyObject.getGeolocation().getLng()).toString());
+			Element entryElement = itemElement.addElement("entry", ATOM_NAMESPACE);
+			
+			FeatureUtils.addElement(options, entryElement, "author", 
+					postObject.getAuthor());
+			
+			Element contentElement = FeatureUtils.addElement(
+					options, entryElement, "content", 
+					postObject.getContent());
+			if (contentElement != null) {
+				contentElement.addAttribute("type", "text");
+			}
+			
+			if (postObject.getUpdated() != null) {
+				FeatureUtils.addElement(options, entryElement, "updated", 
+						DATE_FORMAT.format(postObject.getUpdated()));
+			}
+			
+			String fullId = postObject.getLeafNodeName() + ":"
+					+ postObject.getMessageId();
+			FeatureUtils.addElement(options, entryElement, "id", fullId);
+			
+			Element geoElement = FeatureUtils.addNamespaceElement(
+					options, entryElement, "geoloc", Geolocation.NAMESPACE);
+			appendGeoLocation(geoElement, 
+					postObject.getGeolocation());
+			
+			Element inReplyEl = FeatureUtils.addNamespaceElement(
+					options, entryElement, "thr:in-reply-to", THREAD_NAMESPACE);
+			if (inReplyEl != null) {
+				inReplyEl.addAttribute("ref", postObject.getInReplyTo());
 			}
 		}
 		
 		RSMUtils.appendRSMElement(queryElement, rsm);
 		
 		return result;
+	}
+
+	private void appendGeoLocation(Element geoElement, Geolocation geoLocation) {
+		
+		if (geoElement == null || geoLocation == null) {
+			return;
+		}
+		
+		if (geoLocation.getLat() != null) {
+			geoElement.addElement("lat").setText(
+					geoLocation.getLat().toString());
+		}
+		
+		if (geoLocation.getLng() != null) {
+			geoElement.addElement("lon").setText(
+					geoLocation.getLng().toString());
+		}
+		
+		if (geoLocation.getText() != null) {
+			geoElement.addElement("text").setText(
+					geoLocation.getText());
+		}
 	}
 }
