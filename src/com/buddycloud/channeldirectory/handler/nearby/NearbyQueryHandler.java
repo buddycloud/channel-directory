@@ -8,6 +8,7 @@ import java.util.Properties;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
@@ -25,10 +26,12 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  * Handles queries for nearby content.
  * A query should contain user's lat/lon pair, so
  * this handle can return channels close to user location.
- *  
+ * Returns the closest channels (in ascending distance order)
+ * in a 1000km radius.
  */
 public class NearbyQueryHandler extends ChannelQueryHandler {
 
+	private static final String RADIUS_IN_KM = "1000";
 	private static final String SOLR_CHANNELCORE_PROP = "solr.channelcore";
 	
 	public NearbyQueryHandler(Properties properties) {
@@ -81,7 +84,9 @@ public class NearbyQueryHandler extends ChannelQueryHandler {
 		solrQuery.set("fq", "{!geofilt}");
 		solrQuery.set("sfield", "geoloc");
 		solrQuery.set("pt", lat + "," + lng);
-		solrQuery.set("d", "100");
+		solrQuery.set("d", RADIUS_IN_KM);
+		
+		solrQuery.addSortField("geodist()", ORDER.asc);
 		
 		QueryResponse queryResponse = solrServer.query(solrQuery);
 		
