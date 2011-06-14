@@ -75,6 +75,7 @@
   <field name="jid"      type="string"   indexed="true"  stored="true"  multiValued="false" required="true"/>
   <field name="title"    type="text"   indexed="true"  stored="true"  multiValued="false" /> 
   <field name="geoloc"    type="location"   indexed="true"  stored="true"  multiValued="false" />
+  <field name="channel-type"      type="string"   indexed="true"  stored="true"  multiValued="false"/>
   
   <!-- catchall field, containing all other searchable text fields (implemented
         via copyField further on in this schema  -->

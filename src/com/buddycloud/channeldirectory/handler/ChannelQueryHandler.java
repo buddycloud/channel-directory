@@ -53,6 +53,8 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 					nearbyObject.getType());
 			FeatureUtils.addElement(options, itemElement, "title",
 					nearbyObject.getTitle());
+			FeatureUtils.addElement(options, itemElement, "channel-type", 
+					nearbyObject.getChannelType());
 
 			Element geoElement = FeatureUtils.addNamespaceElement(
 					options, itemElement, "geoloc", Geolocation.NAMESPACE);

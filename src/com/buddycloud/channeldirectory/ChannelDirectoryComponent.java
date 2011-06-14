@@ -15,6 +15,8 @@ import com.buddycloud.channeldirectory.handler.QueryHandler;
 import com.buddycloud.channeldirectory.handler.content.ContentQueryHandler;
 import com.buddycloud.channeldirectory.handler.metadata.MetadataQueryHandler;
 import com.buddycloud.channeldirectory.handler.nearby.NearbyQueryHandler;
+import com.buddycloud.channeldirectory.handler.recommendation.RecommendationQueryHandler;
+import com.buddycloud.channeldirectory.handler.similarity.SimilarityQueryHandler;
 import com.buddycloud.channeldirectory.rsm.RSM;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
@@ -92,6 +94,8 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 		addHandler(new NearbyQueryHandler(properties));
 		addHandler(new MetadataQueryHandler(properties));
 		addHandler(new ContentQueryHandler(properties));
+		addHandler(new RecommendationQueryHandler(properties));
+		addHandler(new SimilarityQueryHandler(properties));
 	}
 
 	private void addHandler(QueryHandler queryHandler) {
