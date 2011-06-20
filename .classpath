@@ -19,6 +19,12 @@
 	<classpathentry kind="lib" path="lib/commons-io-1.4.jar"/>
 	<classpathentry kind="lib" path="lib/jcl-over-slf4j-1.5.5.jar"/>
 	<classpathentry kind="lib" path="lib/whack.jar"/>
+	<classpathentry kind="lib" path="lib/mahout-core-0.5.jar" sourcepath="C:/Users/Abmar/gsoc/2011/mahout/src/mahout-distribution-0.5/core/src"/>
+	<classpathentry kind="lib" path="lib/opencsv-2.3.jar"/>
+	<classpathentry kind="lib" path="lib/google-collections-1.0-rc2.jar"/>
+	<classpathentry kind="lib" path="lib/mahout-math-0.5.jar"/>
+	<classpathentry kind="lib" path="lib/uncommons-maths-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/guava-r03.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,23 +1,16 @@
 package com.buddycloud.channeldirectory.handler.recommendation;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServer;
+import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
-import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.handler.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
-import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -29,8 +22,16 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  */
 public class RecommendationQueryHandler extends ChannelQueryHandler {
 
+	private final ChannelRecommender recommender;
+	
 	public RecommendationQueryHandler(Properties properties) {
 		super("http://buddycloud.com/channel_directory/recommendation_query", properties);
+		try {
+			this.recommender = new ChannelRecommender();
+		} catch (TasteException e) {
+			getLogger().fatal(e);
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -62,8 +63,8 @@ public class RecommendationQueryHandler extends ChannelQueryHandler {
 		return createIQResponse(iq, recommendedChannels);
 	}
 
-	private List<ChannelData> findRecommendedChannels(String search) throws MalformedURLException, SolrServerException {
-		//TODO Query Mahout
-		return new ArrayList<ChannelData>();
+	private List<ChannelData> findRecommendedChannels(String search)
+			throws MalformedURLException, SolrServerException, TasteException {
+		return recommender.recommend(search, 10);
 	}
 }
