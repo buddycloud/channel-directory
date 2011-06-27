@@ -24,14 +24,9 @@ public class RecommendationQueryHandler extends ChannelQueryHandler {
 
 	private final ChannelRecommender recommender;
 	
-	public RecommendationQueryHandler(Properties properties) {
+	public RecommendationQueryHandler(Properties properties, ChannelRecommender recommender) {
 		super("http://buddycloud.com/channel_directory/recommendation_query", properties);
-		try {
-			this.recommender = new ChannelRecommender();
-		} catch (TasteException e) {
-			getLogger().fatal(e);
-			throw new RuntimeException(e);
-		}
+		this.recommender = recommender;
 	}
 
 	@Override

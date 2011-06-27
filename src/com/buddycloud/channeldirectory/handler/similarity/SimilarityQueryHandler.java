@@ -1,15 +1,16 @@
 package com.buddycloud.channeldirectory.handler.similarity;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.handler.ChannelQueryHandler;
+import com.buddycloud.channeldirectory.handler.recommendation.ChannelRecommender;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
@@ -22,8 +23,11 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  */
 public class SimilarityQueryHandler extends ChannelQueryHandler {
 
-	public SimilarityQueryHandler(Properties properties) {
-		super("http://buddycloud.com/channel_directory/similar_channelsy", properties);
+	private final ChannelRecommender recommender;
+
+	public SimilarityQueryHandler(Properties properties, ChannelRecommender recommender) {
+		super("http://buddycloud.com/channel_directory/similar_channels", properties);
+		this.recommender = recommender;
 	}
 
 	@Override
@@ -55,8 +59,8 @@ public class SimilarityQueryHandler extends ChannelQueryHandler {
 		return createIQResponse(iq, recommendedChannels);
 	}
 
-	private List<ChannelData> findSimilarChannels(String search) throws MalformedURLException, SolrServerException {
-		//TODO Query Mahout
-		return new ArrayList<ChannelData>();
+	private List<ChannelData> findSimilarChannels(String search)
+			throws MalformedURLException, SolrServerException, TasteException {
+		return recommender.getSimilarChannels(search, 10);
 	}
 }

@@ -13,6 +13,7 @@ import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.handler.response.PostData;
 import com.buddycloud.channeldirectory.rsm.RSM;
 import com.buddycloud.channeldirectory.utils.FeatureUtils;
+import com.buddycloud.channeldirectory.utils.GeolocationUtils;
 import com.buddycloud.channeldirectory.utils.RSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
@@ -83,7 +84,7 @@ public abstract class PostQueryHandler extends AbstractQueryHandler {
 			
 			Element geoElement = FeatureUtils.addNamespaceElement(
 					options, entryElement, "geoloc", Geolocation.NAMESPACE);
-			appendGeoLocation(geoElement, 
+			GeolocationUtils.appendGeoLocation(geoElement, 
 					postObject.getGeolocation());
 			
 			Element inReplyEl = FeatureUtils.addNamespaceElement(
@@ -96,27 +97,5 @@ public abstract class PostQueryHandler extends AbstractQueryHandler {
 		RSMUtils.appendRSMElement(queryElement, rsm);
 		
 		return result;
-	}
-
-	private void appendGeoLocation(Element geoElement, Geolocation geoLocation) {
-		
-		if (geoElement == null || geoLocation == null) {
-			return;
-		}
-		
-		if (geoLocation.getLat() != null) {
-			geoElement.addElement("lat").setText(
-					geoLocation.getLat().toString());
-		}
-		
-		if (geoLocation.getLng() != null) {
-			geoElement.addElement("lon").setText(
-					geoLocation.getLng().toString());
-		}
-		
-		if (geoLocation.getText() != null) {
-			geoElement.addElement("text").setText(
-					geoLocation.getText());
-		}
 	}
 }

@@ -11,6 +11,7 @@ import com.buddycloud.channeldirectory.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.rsm.RSM;
 import com.buddycloud.channeldirectory.utils.FeatureUtils;
+import com.buddycloud.channeldirectory.utils.GeolocationUtils;
 import com.buddycloud.channeldirectory.utils.RSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
@@ -59,13 +60,7 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 			Element geoElement = FeatureUtils.addNamespaceElement(
 					options, itemElement, "geoloc", Geolocation.NAMESPACE);
 			
-			if (geoElement != null) {
-				geoElement.addElement("lat").setText(Double.valueOf(
-						nearbyObject.getGeolocation().getLat()).toString());
-				geoElement.addElement("lon").setText(Double.valueOf(
-						nearbyObject.getGeolocation().getLng()).toString());
-			}
-			
+			GeolocationUtils.appendGeoLocation(geoElement, nearbyObject.getGeolocation());
 		}
 		
 		RSMUtils.appendRSMElement(queryElement, rsm);

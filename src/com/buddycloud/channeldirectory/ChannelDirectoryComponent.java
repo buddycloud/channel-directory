@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
+import org.apache.mahout.cf.taste.common.TasteException;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.xmpp.component.AbstractComponent;
@@ -15,6 +16,7 @@ import com.buddycloud.channeldirectory.handler.QueryHandler;
 import com.buddycloud.channeldirectory.handler.content.ContentQueryHandler;
 import com.buddycloud.channeldirectory.handler.metadata.MetadataQueryHandler;
 import com.buddycloud.channeldirectory.handler.nearby.NearbyQueryHandler;
+import com.buddycloud.channeldirectory.handler.recommendation.ChannelRecommender;
 import com.buddycloud.channeldirectory.handler.recommendation.RecommendationQueryHandler;
 import com.buddycloud.channeldirectory.handler.similarity.SimilarityQueryHandler;
 import com.buddycloud.channeldirectory.rsm.RSM;
@@ -94,8 +96,18 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 		addHandler(new NearbyQueryHandler(properties));
 		addHandler(new MetadataQueryHandler(properties));
 		addHandler(new ContentQueryHandler(properties));
-		addHandler(new RecommendationQueryHandler(properties));
-		addHandler(new SimilarityQueryHandler(properties));
+		
+		ChannelRecommender recommender = createRecommender();
+		addHandler(new RecommendationQueryHandler(properties, recommender));
+		addHandler(new SimilarityQueryHandler(properties, recommender));
+	}
+	
+	private ChannelRecommender createRecommender() {
+		try {
+			return new ChannelRecommender();
+		} catch (TasteException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private void addHandler(QueryHandler queryHandler) {

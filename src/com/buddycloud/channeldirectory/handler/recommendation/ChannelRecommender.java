@@ -1,20 +1,20 @@
 package com.buddycloud.channeldirectory.handler.recommendation;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
+import org.apache.mahout.cf.taste.impl.recommender.GenericBooleanPrefItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.GenericBooleanPrefUserBasedRecommender;
+import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
-import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
+import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
@@ -25,17 +25,22 @@ import com.buddycloud.channeldirectory.handler.response.ChannelData;
  * a {@link LogLikelihoodSimilarity} for the user similarity. 
  * 
  */
-public class ChannelRecommender implements Recommender {
+public class ChannelRecommender {
 
-	private Recommender recommender;
+	private Recommender userRecommender;
+	private GenericItemBasedRecommender itemRecommender;
 	private ChannelRecommenderDumpDataModel channelDataModel = new ChannelRecommenderDumpDataModel();
 	
 	public ChannelRecommender() throws TasteException {
 		DataModel dataModel = channelDataModel.getDataModel();
-		UserSimilarity similarity = new CachingUserSimilarity(new LogLikelihoodSimilarity(dataModel), dataModel);
+		UserSimilarity userSimilarity = new CachingUserSimilarity(new LogLikelihoodSimilarity(dataModel), dataModel);
 		UserNeighborhood neighborhood =
-			new NearestNUserNeighborhood(10, Double.NEGATIVE_INFINITY, similarity, dataModel, 1.0);
-		recommender = new GenericBooleanPrefUserBasedRecommender(dataModel, neighborhood, similarity);
+			new NearestNUserNeighborhood(10, Double.NEGATIVE_INFINITY, userSimilarity, dataModel, 1.0);
+		userRecommender = new GenericBooleanPrefUserBasedRecommender(dataModel, neighborhood, userSimilarity);
+		
+		ItemSimilarity itemSimilarity = new LogLikelihoodSimilarity(dataModel);
+		itemRecommender = new GenericBooleanPrefItemBasedRecommender(
+				dataModel, itemSimilarity);
 	}
 
 	/**
@@ -48,7 +53,7 @@ public class ChannelRecommender implements Recommender {
 	 * @throws TasteException
 	 */
 	public List<ChannelData> recommend(String userID, int howMany) throws TasteException {
-		List<RecommendedItem> recommended = recommender.recommend(
+		List<RecommendedItem> recommended = userRecommender.recommend(
 				channelDataModel.toUserId(userID), howMany);
 		
 		List<ChannelData> recommendedChannels = new LinkedList<ChannelData>();
@@ -61,39 +66,27 @@ public class ChannelRecommender implements Recommender {
 		return recommendedChannels;
 	}
 	
-	@Override
-	public List<RecommendedItem> recommend(long userID, int howMany) throws TasteException {
-		return recommender.recommend(userID, howMany);
+	/**
+	 * Recommends a list of jids of channels that are
+	 * similar to a given channel.
+	 * 
+	 * @param channelJid The channel jid
+	 * @param howMany The number of recommendations
+	 * @return A list of similar channels' jids 
+	 * @throws TasteException
+	 */
+	public List<ChannelData> getSimilarChannels(String channelJid, int howMany) throws TasteException {
+		List<RecommendedItem> recommended = itemRecommender.mostSimilarItems(
+				channelDataModel.toChannelId(channelJid), howMany);
+		
+		List<ChannelData> recommendedChannels = new LinkedList<ChannelData>();
+		
+		for (RecommendedItem recommendedItem : recommended) {
+			recommendedChannels.add(channelDataModel.toChannelData(
+					recommendedItem.getItemID()));
+		}
+		
+		return recommendedChannels;
 	}
-
-	@Override
-	public List<RecommendedItem> recommend(long userID, int howMany, IDRescorer rescorer) throws TasteException {
-		return recommender.recommend(userID, howMany, rescorer);
-	}
-
-	@Override
-	public float estimatePreference(long userID, long itemID) throws TasteException {
-		return recommender.estimatePreference(userID, itemID);
-	}
-
-	@Override
-	public void setPreference(long userID, long itemID, float value) throws TasteException {
-		recommender.setPreference(userID, itemID, value);
-	}
-
-	@Override
-	public void removePreference(long userID, long itemID) throws TasteException {
-		recommender.removePreference(userID, itemID);
-	}
-
-	@Override
-	public DataModel getDataModel() {
-		return recommender.getDataModel();
-	}
-
-	@Override
-	public void refresh(Collection<Refreshable> alreadyRefreshed) {
-		recommender.refresh(alreadyRefreshed);
-	}
-
+	
 }

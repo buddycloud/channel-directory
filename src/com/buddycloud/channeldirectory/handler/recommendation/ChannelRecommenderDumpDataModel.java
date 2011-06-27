@@ -136,4 +136,15 @@ public class ChannelRecommenderDumpDataModel {
 		return idToItem.get(itemID);
 	}
 
+	/**
+	 * Converts a channel jid into a long id, 
+	 * which is required by Mahout.
+	 * 
+	 * @param channelJid
+	 * @return
+	 */
+	public long toChannelId(String channelJid) {
+		return itemToId.get(channelJid);
+	}
+
 }
