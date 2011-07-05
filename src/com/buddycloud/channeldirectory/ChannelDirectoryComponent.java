@@ -13,10 +13,10 @@ import org.xmpp.component.AbstractComponent;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.handler.QueryHandler;
+import com.buddycloud.channeldirectory.handler.common.mahout.ChannelRecommender;
 import com.buddycloud.channeldirectory.handler.content.ContentQueryHandler;
 import com.buddycloud.channeldirectory.handler.metadata.MetadataQueryHandler;
 import com.buddycloud.channeldirectory.handler.nearby.NearbyQueryHandler;
-import com.buddycloud.channeldirectory.handler.recommendation.ChannelRecommender;
 import com.buddycloud.channeldirectory.handler.recommendation.RecommendationQueryHandler;
 import com.buddycloud.channeldirectory.handler.similarity.SimilarityQueryHandler;
 import com.buddycloud.channeldirectory.rsm.RSM;
@@ -97,14 +97,14 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 		addHandler(new MetadataQueryHandler(properties));
 		addHandler(new ContentQueryHandler(properties));
 		
-		ChannelRecommender recommender = createRecommender();
+		ChannelRecommender recommender = createRecommender(properties);
 		addHandler(new RecommendationQueryHandler(properties, recommender));
 		addHandler(new SimilarityQueryHandler(properties, recommender));
 	}
 	
-	private ChannelRecommender createRecommender() {
+	private ChannelRecommender createRecommender(Properties properties) {
 		try {
-			return new ChannelRecommender();
+			return new ChannelRecommender(properties);
 		} catch (TasteException e) {
 			throw new RuntimeException(e);
 		}

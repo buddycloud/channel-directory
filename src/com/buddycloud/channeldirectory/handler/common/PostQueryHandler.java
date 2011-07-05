@@ -1,4 +1,4 @@
-package com.buddycloud.channeldirectory.handler;
+package com.buddycloud.channeldirectory.handler.common;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -9,13 +9,14 @@ import java.util.Set;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
+import com.buddycloud.channeldirectory.handler.AbstractQueryHandler;
+import com.buddycloud.channeldirectory.handler.QueryHandler;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.handler.response.PostData;
 import com.buddycloud.channeldirectory.rsm.RSM;
 import com.buddycloud.channeldirectory.utils.FeatureUtils;
 import com.buddycloud.channeldirectory.utils.GeolocationUtils;
 import com.buddycloud.channeldirectory.utils.RSMUtils;
-import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
  * Abstract class for {@link QueryHandler} that returns
@@ -34,26 +35,16 @@ public abstract class PostQueryHandler extends AbstractQueryHandler {
 		super(namespace, properties);
 	}
 
-	protected IQ createIQResponse(IQ iq, List<PostData> allContent) {
+	protected IQ createIQResponse(IQ iq, List<PostData> allContent, RSM rsm) {
 		IQ result = IQ.createResultIQ(iq);
 		
 		Element queryEl = iq.getElement().element("query");
 		
-		RSM rsm = RSMUtils.parseRSM(queryEl);
 		Set<String> options = FeatureUtils.parseOptions(queryEl);
-		
-		List<PostData> filteredObjects = null;
-		
-		try {
-			filteredObjects = RSMUtils.filterRSMResponse(
-					allContent, rsm);
-		} catch (IllegalArgumentException e) {
-			return XMPPUtils.errorRSM(iq, getLogger());
-		}
 		
 		Element queryElement = result.getElement().addElement("query", getNamespace());
 		
-		for (PostData postObject : filteredObjects) {
+		for (PostData postObject : allContent) {
 			Element itemElement = queryElement.addElement("item");
 			
 			FeatureUtils.addAttribute(options, itemElement, "id",

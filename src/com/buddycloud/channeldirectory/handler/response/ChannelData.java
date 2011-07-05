@@ -25,6 +25,7 @@ public class ChannelData extends ContentData {
 	private String title;
 	private Geolocation geolocation;
 	private String channelType;
+	private String description;
 	
 	public void setGeolocation(Geolocation geolocation) {
 		this.geolocation = geolocation;
@@ -48,6 +49,14 @@ public class ChannelData extends ContentData {
 
 	public String getChannelType() {
 		return channelType;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getDescription() {
+		return description;
 	}
 
 }

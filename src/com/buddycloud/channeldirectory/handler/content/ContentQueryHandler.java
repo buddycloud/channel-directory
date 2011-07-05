@@ -17,9 +17,12 @@ import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
-import com.buddycloud.channeldirectory.handler.PostQueryHandler;
+import com.buddycloud.channeldirectory.handler.common.PostQueryHandler;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.handler.response.PostData;
+import com.buddycloud.channeldirectory.rsm.RSM;
+import com.buddycloud.channeldirectory.utils.RSMUtils;
+import com.buddycloud.channeldirectory.utils.SolrRSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -54,25 +57,29 @@ public class ContentQueryHandler extends PostQueryHandler {
 					getLogger());
 		}
 		
+		RSM rsm = RSMUtils.parseRSM(queryElement);
 		List<PostData> relatedPosts;
 		
 		try {
-			relatedPosts = findObjectsByContent(search);
+			relatedPosts = findObjectsByContent(search, rsm);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
 		}
 		
-		return createIQResponse(iq, relatedPosts);
+		return createIQResponse(iq, relatedPosts, rsm);
 	}
 
-	private List<PostData> findObjectsByContent(String search)
+	private List<PostData> findObjectsByContent(String search, RSM rsm)
 			throws MalformedURLException, SolrServerException {
 		SolrServer solrServer = getSolrServer();
 		SolrQuery solrQuery = new SolrQuery(search);
 		solrQuery.setSortField("updated", ORDER.desc);
+		
+		SolrRSMUtils.preprocess(solrQuery, rsm);
 		QueryResponse queryResponse = solrServer.query(solrQuery);
-
+		SolrRSMUtils.postprocess(queryResponse, rsm);
+		
 		return convertResponse(queryResponse);
 	}
 	

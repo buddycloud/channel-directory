@@ -2,7 +2,7 @@ package com.buddycloud.channeldirectory.handler.response;
 
 import java.util.Date;
 
-import com.buddycloud.channeldirectory.handler.PostQueryHandler;
+import com.buddycloud.channeldirectory.handler.common.PostQueryHandler;
 
 /**
  * Represents a response data for searches

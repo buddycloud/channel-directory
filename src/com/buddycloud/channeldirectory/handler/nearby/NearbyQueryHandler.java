@@ -17,9 +17,12 @@ import org.dom4j.Attribute;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
-import com.buddycloud.channeldirectory.handler.ChannelQueryHandler;
+import com.buddycloud.channeldirectory.handler.common.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
+import com.buddycloud.channeldirectory.rsm.RSM;
+import com.buddycloud.channeldirectory.utils.RSMUtils;
+import com.buddycloud.channeldirectory.utils.SolrRSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -66,19 +69,20 @@ public class NearbyQueryHandler extends ChannelQueryHandler {
 		double lat = Double.valueOf(latAtt.getValue());
 		double lng = Double.valueOf(lngAtt.getValue());
 		
+		RSM rsm = RSMUtils.parseRSM(queryElement);
 		List<ChannelData> nearbyObjects;
 		
 		try {
-			nearbyObjects = findNearbyObjects(lat, lng);
+			nearbyObjects = findNearbyObjects(lat, lng, rsm);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
 		}
 		
-		return createIQResponse(iq, nearbyObjects);
+		return createIQResponse(iq, nearbyObjects, rsm);
 	}
 
-	private List<ChannelData> findNearbyObjects(double lat, double lng) throws MalformedURLException, SolrServerException {
+	private List<ChannelData> findNearbyObjects(double lat, double lng, RSM rsm) throws MalformedURLException, SolrServerException {
 		SolrServer solrServer = getSolrServer();
 		SolrQuery solrQuery = new SolrQuery("*:*");
 		solrQuery.set("fq", "{!geofilt}");
@@ -88,7 +92,9 @@ public class NearbyQueryHandler extends ChannelQueryHandler {
 		
 		solrQuery.addSortField("geodist()", ORDER.asc);
 		
+		SolrRSMUtils.preprocess(solrQuery, rsm);
 		QueryResponse queryResponse = solrServer.query(solrQuery);
+		SolrRSMUtils.postprocess(queryResponse, rsm);
 		
 		return convertResponse(queryResponse);
 	}

@@ -1,16 +1,20 @@
 package com.buddycloud.channeldirectory.handler.recommendation;
 
-import java.net.MalformedURLException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
-import com.buddycloud.channeldirectory.handler.ChannelQueryHandler;
+import com.buddycloud.channeldirectory.handler.common.ChannelQueryHandler;
+import com.buddycloud.channeldirectory.handler.common.mahout.ChannelRecommender;
+import com.buddycloud.channeldirectory.handler.common.mahout.RecommendationResponse;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
+import com.buddycloud.channeldirectory.rsm.RSM;
+import com.buddycloud.channeldirectory.utils.MahoutRSMUtils;
+import com.buddycloud.channeldirectory.utils.RSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -47,19 +51,22 @@ public class RecommendationQueryHandler extends ChannelQueryHandler {
 					getLogger());
 		}
 		
+		RSM rsm = RSMUtils.parseRSM(queryElement);
 		List<ChannelData> recommendedChannels;
 		try {
-			recommendedChannels = findRecommendedChannels(userJid);
+			recommendedChannels = findRecommendedChannels(userJid, rsm);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
 		}
 		
-		return createIQResponse(iq, recommendedChannels);
+		return createIQResponse(iq, recommendedChannels, rsm);
 	}
 
-	private List<ChannelData> findRecommendedChannels(String search)
-			throws MalformedURLException, SolrServerException, TasteException {
-		return recommender.recommend(search, 10);
+	private List<ChannelData> findRecommendedChannels(String search, RSM rsm)
+			throws TasteException, SQLException {
+		int howMany = MahoutRSMUtils.preprocess(rsm);
+		RecommendationResponse response = recommender.recommend(search, howMany);
+		return MahoutRSMUtils.postprocess(response, rsm);
 	}
 }

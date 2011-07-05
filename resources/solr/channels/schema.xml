@@ -73,7 +73,8 @@
  <fields>   
   <!-- general -->
   <field name="jid"      type="string"   indexed="true"  stored="true"  multiValued="false" required="true"/>
-  <field name="title"    type="text"   indexed="true"  stored="true"  multiValued="false" /> 
+  <field name="title"    type="text"   indexed="true"  stored="true"  multiValued="false" />
+  <field name="description"    type="text"   indexed="true"  stored="true"  multiValued="false" /> 
   <field name="geoloc"    type="location"   indexed="true"  stored="true"  multiValued="false" />
   <field name="channel-type"      type="string"   indexed="true"  stored="true"  multiValued="false"/>
   
@@ -97,6 +98,7 @@
 
  <copyField source="jid" dest="text"/>
  <copyField source="title" dest="text"/>
+ <copyField source="description" dest="text"/>
  <copyField source="geoloc" dest="text"/>
  
  <!-- SolrQueryParser configuration: defaultOperator="AND|OR" -->

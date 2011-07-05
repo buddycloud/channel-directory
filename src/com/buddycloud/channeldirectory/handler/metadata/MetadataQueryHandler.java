@@ -15,9 +15,12 @@ import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
-import com.buddycloud.channeldirectory.handler.ChannelQueryHandler;
+import com.buddycloud.channeldirectory.handler.common.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
+import com.buddycloud.channeldirectory.rsm.RSM;
+import com.buddycloud.channeldirectory.utils.RSMUtils;
+import com.buddycloud.channeldirectory.utils.SolrRSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -40,6 +43,7 @@ public class MetadataQueryHandler extends ChannelQueryHandler {
 		Element queryElement = iq.getElement().element("query");
 		Element searchElement = queryElement.element("search");
 		
+		
 		if (searchElement == null) {
 			return XMPPUtils.error(iq, "Query does not contain search element.", 
 					getLogger());
@@ -52,21 +56,26 @@ public class MetadataQueryHandler extends ChannelQueryHandler {
 					getLogger());
 		}
 		
+		RSM rsm = RSMUtils.parseRSM(queryElement);
+		
 		List<ChannelData> nearbyObjects;
 		try {
-			nearbyObjects = findObjectsByMetadata(search);
+			nearbyObjects = findObjectsByMetadata(rsm, search);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
 		}
 		
-		return createIQResponse(iq, nearbyObjects);
+		return createIQResponse(iq, nearbyObjects, rsm);
 	}
 
-	private List<ChannelData> findObjectsByMetadata(String search) throws MalformedURLException, SolrServerException {
+	private List<ChannelData> findObjectsByMetadata(RSM rsm, String search) throws MalformedURLException, SolrServerException {
 		SolrServer solrServer = getSolrServer();
 		SolrQuery solrQuery = new SolrQuery(search);
+		
+		SolrRSMUtils.preprocess(solrQuery, rsm);
 		QueryResponse queryResponse = solrServer.query(solrQuery);
+		SolrRSMUtils.postprocess(queryResponse, rsm);
 		
 		return convertResponse(queryResponse);
 	}
