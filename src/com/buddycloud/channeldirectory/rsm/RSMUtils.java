@@ -1,4 +1,4 @@
-package com.buddycloud.channeldirectory.utils;
+package com.buddycloud.channeldirectory.rsm;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -6,7 +6,6 @@ import java.util.List;
 import org.dom4j.Element;
 
 import com.buddycloud.channeldirectory.handler.response.ContentData;
-import com.buddycloud.channeldirectory.rsm.RSM;
 
 /**
  * It is responsible for providing utility methods related to RSM format 

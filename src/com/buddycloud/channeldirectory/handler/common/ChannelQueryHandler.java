@@ -12,9 +12,9 @@ import com.buddycloud.channeldirectory.handler.QueryHandler;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.rsm.RSM;
+import com.buddycloud.channeldirectory.rsm.RSMUtils;
 import com.buddycloud.channeldirectory.utils.FeatureUtils;
 import com.buddycloud.channeldirectory.utils.GeolocationUtils;
-import com.buddycloud.channeldirectory.utils.RSMUtils;
 
 /**
  * Abstract class for {@link QueryHandler} that returns

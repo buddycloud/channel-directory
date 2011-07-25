@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.apache.mahout.cf.taste.common.TasteException;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.xmpp.component.AbstractComponent;
@@ -105,7 +104,7 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 	private ChannelRecommender createRecommender(Properties properties) {
 		try {
 			return new ChannelRecommender(properties);
-		} catch (TasteException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}

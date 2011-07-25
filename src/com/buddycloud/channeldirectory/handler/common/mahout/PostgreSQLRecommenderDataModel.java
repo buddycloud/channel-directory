@@ -7,7 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLBooleanPrefJDBCDataModel;
+import org.apache.mahout.cf.taste.impl.model.jdbc.ReloadFromJDBCDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
 
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
@@ -24,14 +26,15 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 		try {
 			createDataSource();
 			createDataModel();
-		} catch (PropertyVetoException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	private void createDataModel() {
-		this.dataModel = new PostgreSQLBooleanPrefJDBCDataModel(
-				dataSource);
+	private void createDataModel() throws TasteException {
+		this.dataModel = new ReloadFromJDBCDataModel(
+				new PostgreSQLBooleanPrefJDBCDataModel(
+				dataSource));
 	}
 	
 	private void createDataSource() throws PropertyVetoException {

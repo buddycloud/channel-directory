@@ -7,10 +7,9 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.SolrQuery.ORDER;
-import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -18,11 +17,12 @@ import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.handler.common.PostQueryHandler;
+import com.buddycloud.channeldirectory.handler.common.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.handler.response.PostData;
 import com.buddycloud.channeldirectory.rsm.RSM;
-import com.buddycloud.channeldirectory.utils.RSMUtils;
-import com.buddycloud.channeldirectory.utils.SolrRSMUtils;
+import com.buddycloud.channeldirectory.rsm.RSMUtils;
+import com.buddycloud.channeldirectory.rsm.SolrRSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
@@ -33,8 +33,6 @@ import com.buddycloud.channeldirectory.utils.XMPPUtils;
  */
 public class ContentQueryHandler extends PostQueryHandler {
 
-	private static final String SOLR_POSTCORE_PROP = "solr.postcore";
-	
 	public ContentQueryHandler(Properties properties) {
 		super("http://buddycloud.com/channel_directory/content_query", properties);
 	}
@@ -72,7 +70,8 @@ public class ContentQueryHandler extends PostQueryHandler {
 
 	private List<PostData> findObjectsByContent(String search, RSM rsm)
 			throws MalformedURLException, SolrServerException {
-		SolrServer solrServer = getSolrServer();
+		SolrServer solrServer = SolrServerFactory.createPostCore(
+				getProperties());
 		SolrQuery solrQuery = new SolrQuery(search);
 		solrQuery.setSortField("updated", ORDER.desc);
 		
@@ -125,13 +124,6 @@ public class ContentQueryHandler extends PostQueryHandler {
 		postData.setUpdated((Date) solrDocument.getFieldValue("updated"));
 		
 		return postData;
-	}
-	
-	private SolrServer getSolrServer() throws MalformedURLException {
-		String solrChannelUrl = (String) getProperties()
-				.get(SOLR_POSTCORE_PROP);
-		SolrServer server = new CommonsHttpSolrServer(solrChannelUrl);
-		return server;
 	}
 
 }

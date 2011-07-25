@@ -1,9 +1,8 @@
-package com.buddycloud.channeldirectory.utils;
+package com.buddycloud.channeldirectory.rsm;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 
-import com.buddycloud.channeldirectory.rsm.RSM;
 
 /**
  * It is responsible for providing utility methods related to RSM format 

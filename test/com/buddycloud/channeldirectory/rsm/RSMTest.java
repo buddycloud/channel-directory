@@ -7,7 +7,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
-import com.buddycloud.channeldirectory.utils.RSMUtils;
 
 public class RSMTest {
 

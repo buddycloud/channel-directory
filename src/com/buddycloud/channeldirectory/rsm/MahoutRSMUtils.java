@@ -1,10 +1,9 @@
-package com.buddycloud.channeldirectory.utils;
+package com.buddycloud.channeldirectory.rsm;
 
 import java.util.List;
 
 import com.buddycloud.channeldirectory.handler.common.mahout.RecommendationResponse;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
-import com.buddycloud.channeldirectory.rsm.RSM;
 
 /**
  * It is responsible for providing utility methods related to RSM format 

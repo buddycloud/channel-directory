@@ -12,9 +12,9 @@ import com.buddycloud.channeldirectory.handler.common.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.handler.common.mahout.ChannelRecommender;
 import com.buddycloud.channeldirectory.handler.common.mahout.RecommendationResponse;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
+import com.buddycloud.channeldirectory.rsm.MahoutRSMUtils;
 import com.buddycloud.channeldirectory.rsm.RSM;
-import com.buddycloud.channeldirectory.utils.MahoutRSMUtils;
-import com.buddycloud.channeldirectory.utils.RSMUtils;
+import com.buddycloud.channeldirectory.rsm.RSMUtils;
 import com.buddycloud.channeldirectory.utils.XMPPUtils;
 
 /**
