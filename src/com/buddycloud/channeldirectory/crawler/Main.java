@@ -18,9 +18,6 @@ package com.buddycloud.channeldirectory.crawler;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -31,15 +28,8 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smackx.packet.DiscoverItems;
-import org.jivesoftware.smackx.packet.DiscoverItems.Item;
-import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.PubSubManager;
 
-import com.buddycloud.channeldirectory.crawler.node.FollowerCrawler;
-import com.buddycloud.channeldirectory.crawler.node.MetaDataCrawler;
 import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
-import com.buddycloud.channeldirectory.crawler.node.PostCrawler;
 
 /**
  * Creates and starts the Crawler component.
@@ -63,67 +53,13 @@ public class Main {
 		
 		Properties configuration = loadConfiguration();
 		XMPPConnection connection = createConnection(configuration);
-		
-		String userId = connection.getUser();
-		
 		addTraceListeners(connection);
 		
-		String serversToCrawlStr = configuration.getProperty("crawler.servertocrawl");
-		String[] serversToCrawl = serversToCrawlStr.split(",");
+		PubSubManagers managers = new PubSubManagers(connection);
+		PubSubSubscriptionListener listener = new PubSubSubscriptionListener(configuration, managers);
+		listener.start();
 		
-		List<NodeCrawler> nodeCrawlers = new LinkedList<NodeCrawler>();
-		nodeCrawlers.add(new MetaDataCrawler(configuration));
-		nodeCrawlers.add(new PostCrawler(configuration));
-		nodeCrawlers.add(new FollowerCrawler(configuration));
-		
-		while (true) {
-			
-			for (String server : serversToCrawl) {
-				PubSubManager manager = new PubSubManager(connection, server);
-				DiscoverItems discoverInfo = null;
-				try {
-					discoverInfo = manager.discoverNodes(null);
-				} catch (Exception e) {
-					LOGGER.warn("Could not fetch nodes from server [" + server + "]", e);
-				}
-				
-				if (discoverInfo == null) {
-					//TODO To be removed
-					crawlBeerChannel(nodeCrawlers, manager);
-					continue;
-				}
-				
-				Iterator<Item> idsIterator = discoverInfo.getItems();
-				
-				while (idsIterator.hasNext()) {
-					Item item = idsIterator.next();
-					for (NodeCrawler nodeCrawler : nodeCrawlers) {
-						try {
-							Node node = manager.getNode(item.getName());
-							node.subscribe(userId);
-							nodeCrawler.crawl(node);
-						} catch (Exception e) {
-							LOGGER.warn("Could not crawl node [" + item.getName() + "] " +
-									"from server [" + server + "]", e);
-						}
-					}
-				}
-			}
-			
-			Thread.sleep(60000 * 5);
-		}
-	}
-
-	private static void crawlBeerChannel(List<NodeCrawler> nodeCrawlers,
-			PubSubManager manager) throws XMPPException {
-		Node node = manager.getNode("/channel/beer");
-		for (NodeCrawler nodeCrawler : nodeCrawlers) {
-			try {
-				nodeCrawler.crawl(node);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+		new PubSubServerCrawler(configuration, managers, listener).start();
 	}
 
 	private static void addTraceListeners(XMPPConnection connection) {

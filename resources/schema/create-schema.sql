@@ -1,21 +1,23 @@
+CREATE TABLE subscribed_node (
+   name VARCHAR(300),
+   server VARCHAR(300),
+   PRIMARY KEY (name, server)
+);
+
 CREATE SEQUENCE user_id_seq;
- 
 CREATE TABLE t_user (
    id BIGINT PRIMARY KEY DEFAULT nextval('user_id_seq'),
    jid VARCHAR(300)
 );
-
 CREATE INDEX user_jid_index ON t_user(jid);
  
 CREATE SEQUENCE item_id_seq;
- 
 CREATE TABLE item (
    id BIGINT PRIMARY KEY DEFAULT nextval('item_id_seq'),
    jid VARCHAR(300),
    title VARCHAR(300),
    description VARCHAR(500)
 );
-
 CREATE INDEX item_jid_index ON item(jid);
  
 CREATE TABLE taste_preferences (
