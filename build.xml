@@ -1,11 +1,48 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project basedir="." default="jar" name="channeldirectory">
-	<property name="jar.dir" value="target" />
-	<property name="classes.dir" value="bin" />
-	
-	<target name="jar">
-		<mkdir dir="${jar.dir}" />
-		<jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
-		</jar>
+	<property name="target.dir" value="target" />
+	<property name="lib.dir" value="lib" />
+	<property name="classes.dir" value="${target.dir}/classes" />
+
+	<target name="clean">
+		<delete dir="${target.dir}"/>
 	</target>
+
+	<target name="compile" depends="clean">
+		<mkdir dir="${classes.dir}" />
+		<javac srcdir="src" destdir="${classes.dir}" debug="on">
+			<classpath>
+				<path id="lib.classpath">
+					<fileset dir="${lib.dir}">
+						<include name="**/*.jar" />
+					</fileset>
+				</path>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar destfile="${target.dir}/${ant.project.name}.jar" basedir="${classes.dir}"/>
+	</target>
+
+	<target name="package" depends="jar">
+		<zip destfile="${target.dir}/${ant.project.name}.zip">
+			<fileset dir="." defaultexcludes="true">
+				<include name="lib/**"/>
+				<include name="resources/solr/**"/>
+				<include name="bin/**"/>
+				<exclude name="resources/solr/multicore/channels/data"/>
+				<exclude name="resources/solr/multicore/posts/data"/>
+				<include name="configuration.properties"/>
+				<include name="LICENSE"/>
+				<include name="README"/>
+			</fileset>
+			
+			<fileset dir="${target.dir}">
+				<include name="${ant.project.name}.jar"/>
+			</fileset>
+		</zip>
+
+	</target>
+
 </project>

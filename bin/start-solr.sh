@@ -19,7 +19,7 @@
 # Start script for the Channel Directory Solr
 # -----------------------------------------------------------------------------
 
-sh set-env.sh || exit 1
+/bin/bash set-env.sh || exit 1
 
 # Go to Solr home and start it
 

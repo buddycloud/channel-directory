@@ -19,11 +19,11 @@
 # Start script for the Channel Directory Crawler
 # -----------------------------------------------------------------------------
 
-sh set-env.sh || exit 1
+/bin/bash set-env.sh || exit 1
 
 # Go to Solr home and start it
 
 cd "$CHANNEL_DIRECTORY_HOME"
-java -cp .:./lib/* com.buddycloud.channeldirectory.crawler.Main
+java -cp .:./*:./lib/* com.buddycloud.channeldirectory.crawler.Main
 
 exit 0

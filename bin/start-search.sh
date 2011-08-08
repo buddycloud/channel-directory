@@ -19,11 +19,11 @@
 # Start script for the Channel Directory search engine
 # -----------------------------------------------------------------------------
 
-sh set-env.sh || exit 1
+/bin/bash set-env.sh || exit 1
 
 # Go to Solr home and start it
 
 cd "$CHANNEL_DIRECTORY_HOME"
-java -cp .:./lib/* com.buddycloud.channeldirectory.search.Main
+java -cp .:./*:./lib/* com.buddycloud.channeldirectory.search.Main
 
 exit 0

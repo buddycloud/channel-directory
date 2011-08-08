@@ -35,6 +35,6 @@ goto end
 
 rem Start the search engine
 cd %CHANNEL_DIRECTORY_HOME%
-java -cp .;.\lib\* com.buddycloud.channeldirectory.crawler.Main
+java -cp .;.\*;.\lib\* com.buddycloud.channeldirectory.crawler.Main
 
 :end
