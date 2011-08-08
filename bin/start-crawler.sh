@@ -16,44 +16,14 @@
 # limitations under the License.
 
 # -----------------------------------------------------------------------------
-# Set CHANNEL_DIRECTORY_HOME variable
+# Start script for the Channel Directory Crawler
 # -----------------------------------------------------------------------------
 
-checkHome() {
-	if [ -f "$CHANNEL_DIRECTORY_HOME"/resources/start.jar ]; then
-		CHECK_HOME=0
-	fi
-}
+sh set-env.sh || exit 1
 
-echoHomeErrorMessage() {
-	echo The CHANNEL_DIRECTORY_HOME environment variable is not defined correctly
-	echo This environment variable is needed to run this program
-	exit 1
-}
+# Go to Solr home and start it
 
-# Guess CHANNEL_DIRECTORY_HOME if not defined
-
-if [ -z "$CHANNEL_DIRECTORY_HOME" ]; then
-	
-	CURRENT_DIR=`pwd`
-	CHANNEL_DIRECTORY_HOME="$CURRENT_DIR"
-	checkHome();
-	
-	if [ ! "$CHECK_HOME" -eq 0 ]; then
-		
-		CURRENT_DIR=`pwd ..`
-		CHANNEL_DIRECTORY_HOME="$CURRENT_DIR"
-		checkHome();
-		
-		if [ ! "$CHECK_HOME" -eq 0 ]; then
-			echoHomeErrorMessage()
-		fi
-	fi
-else
-	checkHome()
-	if [ ! "$CHECK_HOME" -eq 0 ]; then
-		echoHomeErrorMessage()
-	fi
-fi
+cd "$CHANNEL_DIRECTORY_HOME"
+java -cp .:./lib/* com.buddycloud.channeldirectory.crawler.Main
 
 exit 0

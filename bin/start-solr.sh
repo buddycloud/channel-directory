@@ -23,7 +23,7 @@ sh set-env.sh || exit 1
 
 # Go to Solr home and start it
 
-cd %CHANNEL_DIRECTORY_HOME%\resources\solr
+cd "$CHANNEL_DIRECTORY_HOME"/resources/solr
 java -Dsolr.solr.home=multicore -jar start.jar
 
 exit 0
