@@ -36,7 +36,8 @@ public class Main {
 	private static Logger LOGGER = Logger.getLogger(Main.class);
 
 	/**
-	 * Starts the crawler
+	 * Starts the crawler. This methods create several {@link NodeCrawler}
+	 * for each crawling subject.
 	 * 
 	 * @param args
 	 * @throws MalformedURLException

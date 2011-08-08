@@ -22,6 +22,11 @@ import com.buddycloud.channeldirectory.handler.common.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.handler.response.PostData;
 
+/**
+ * Responsible for crawling {@link Node} data
+ * regarding its posts.
+ *  
+ */
 public class PostCrawler implements NodeCrawler {
 
 	private static final DecimalFormat LATLNG_FORMAT = new DecimalFormat("#0.00", 
@@ -33,6 +38,9 @@ public class PostCrawler implements NodeCrawler {
 		this.configuration = configuration;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
+	 */
 	@Override
 	public void crawl(Node node) throws Exception {
 		LeafNode leafNode = (LeafNode) node;

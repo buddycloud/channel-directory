@@ -19,6 +19,12 @@ import com.buddycloud.channeldirectory.handler.common.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.handler.response.Geolocation;
 
+/**
+ * Responsible for crawling {@link Node} metadata, 
+ * for instance: its title, its description and 
+ * its geolocation.
+ *  
+ */
 public class MetaDataCrawler implements NodeCrawler {
 
 	private static final DecimalFormat LATLNG_FORMAT = new DecimalFormat("#0.00", 
@@ -30,6 +36,9 @@ public class MetaDataCrawler implements NodeCrawler {
 		this.configuration = configuration;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
+	 */
 	@Override
 	public void crawl(Node node) throws XMPPException {
 		LeafNode leaf = (LeafNode) node;

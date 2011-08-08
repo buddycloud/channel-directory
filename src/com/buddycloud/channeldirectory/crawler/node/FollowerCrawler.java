@@ -13,6 +13,11 @@ import org.jivesoftware.smackx.pubsub.Subscription;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
+/**
+ * Responsible for crawling {@link Node} data
+ * regarding subscribers. 
+ * 
+ */
 public class FollowerCrawler implements NodeCrawler {
 
 	private Properties configuration;
@@ -33,6 +38,9 @@ public class FollowerCrawler implements NodeCrawler {
 		}
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
+	 */
 	@Override
 	public void crawl(Node node) throws Exception {
 		List<Subscription> subscriptions = node.getSubscriptions();
