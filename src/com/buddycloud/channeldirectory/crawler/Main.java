@@ -32,7 +32,7 @@ import com.buddycloud.channeldirectory.crawler.node.PostCrawler;
  */
 public class Main {
 
-	private static final String CONFIGURATION_FILE = "configuration.properties";
+	private static final String CONFIGURATION_FILE = System.getenv("CHANNEL_DIRECTORY_HOME") + "/configuration.properties";
 	private static Logger LOGGER = Logger.getLogger(Main.class);
 
 	/**

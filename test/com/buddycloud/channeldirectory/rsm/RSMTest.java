@@ -6,7 +6,9 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.buddycloud.channeldirectory.handler.response.ChannelData;
+import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
+import com.buddycloud.channeldirectory.search.rsm.RSM;
+import com.buddycloud.channeldirectory.search.rsm.RSMUtils;
 
 public class RSMTest {
 

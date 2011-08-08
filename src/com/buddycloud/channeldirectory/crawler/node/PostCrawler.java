@@ -18,9 +18,9 @@ import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PayloadItem;
 
-import com.buddycloud.channeldirectory.handler.common.solr.SolrServerFactory;
-import com.buddycloud.channeldirectory.handler.response.Geolocation;
-import com.buddycloud.channeldirectory.handler.response.PostData;
+import com.buddycloud.channeldirectory.search.handler.common.solr.SolrServerFactory;
+import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
+import com.buddycloud.channeldirectory.search.handler.response.PostData;
 
 /**
  * Responsible for crawling {@link Node} data
