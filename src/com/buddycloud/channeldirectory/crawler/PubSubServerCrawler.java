@@ -15,6 +15,8 @@
  */
 package com.buddycloud.channeldirectory.crawler;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,6 +29,7 @@ import org.jivesoftware.smackx.packet.DiscoverItems.Item;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.crawler.node.FollowerCrawler;
 import com.buddycloud.channeldirectory.crawler.node.MetaDataCrawler;
 import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
@@ -45,11 +48,13 @@ public class PubSubServerCrawler {
 	private final Properties configuration;
 	private final PubSubManagers managers;
 	private final PubSubSubscriptionListener listener;
+	private final ChannelDirectoryDataSource dataSource;
 	
 	public PubSubServerCrawler(Properties configuration, PubSubManagers managers, 
-			PubSubSubscriptionListener listener) {
+			ChannelDirectoryDataSource dataSource, PubSubSubscriptionListener listener) {
 		this.configuration = configuration;
 		this.managers = managers;
+		this.dataSource = dataSource;
 		this.listener = listener;
 	}
 	
@@ -59,9 +64,9 @@ public class PubSubServerCrawler {
 		String[] serversToCrawl = serversToCrawlStr.split(",");
 		
 		List<NodeCrawler> nodeCrawlers = new LinkedList<NodeCrawler>();
-		nodeCrawlers.add(new MetaDataCrawler(configuration));
+		nodeCrawlers.add(new MetaDataCrawler(configuration, dataSource));
 		nodeCrawlers.add(new PostCrawler(configuration));
-		nodeCrawlers.add(new FollowerCrawler(configuration));
+		nodeCrawlers.add(new FollowerCrawler(dataSource));
 		
 		while (true) {
 			
@@ -72,6 +77,14 @@ public class PubSubServerCrawler {
 					discoverInfo = manager.discoverNodes(null);
 				} catch (Exception e) {
 					LOGGER.warn("Could not fetch nodes from server [" + server + "]", e);
+					continue;
+				}
+				
+				try {
+					Node firehoseNode = manager.getNode("firehose");
+					listener.listen(firehoseNode, server);
+				} catch (Exception e) {
+					LOGGER.warn("Could not subscribe to firehose node from server [" + server + "]", e);
 				}
 				
 				if (discoverInfo == null) {
@@ -85,8 +98,8 @@ public class PubSubServerCrawler {
 					for (NodeCrawler nodeCrawler : nodeCrawlers) {
 						try {
 							Node node = manager.getNode(item.getName());
-							listener.listen(node, server, true);
-							nodeCrawler.crawl(node);
+							nodeCrawler.crawl(node, server);
+							insertNode(node, server);
 						} catch (Exception e) {
 							LOGGER.warn("Could not crawl node [" + item.getName() + "] " +
 									"from server [" + server + "]", e);
@@ -100,6 +113,28 @@ public class PubSubServerCrawler {
 			} catch (InterruptedException e) {
 				LOGGER.error(e);
 			}
+		}
+	}
+	
+	/**
+	 * @throws SQLException 
+	 * 
+	 */
+	private void insertNode(Node node, String server) throws SQLException {
+		
+		PreparedStatement statement = dataSource.prepareStatement(
+				"INSERT INTO subscribed_node(name, server) values (?, ?)", 
+				node.getId(), server);
+		statement.setString(0, node.getId());
+		statement.setString(1, server);
+		
+		try {
+			statement.execute();
+		} catch (SQLException e) {
+			LOGGER.warn("Node already subscribed " + node + " " + server);
+		} finally {
+			statement.close();
+			statement.getConnection().close();
 		}
 	}
 	

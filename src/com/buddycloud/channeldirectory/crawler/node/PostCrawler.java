@@ -33,7 +33,7 @@ import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PayloadItem;
 
-import com.buddycloud.channeldirectory.search.handler.common.solr.SolrServerFactory;
+import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.search.handler.response.PostData;
 
@@ -57,7 +57,7 @@ public class PostCrawler implements NodeCrawler {
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
 	 */
 	@Override
-	public void crawl(Node node) throws Exception {
+	public void crawl(Node node, String server) throws Exception {
 		LeafNode leafNode = (LeafNode) node;
 		
 		for (Item item : leafNode.getItems()) {

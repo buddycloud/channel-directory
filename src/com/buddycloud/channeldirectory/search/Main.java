@@ -15,13 +15,14 @@
  */
 package com.buddycloud.channeldirectory.search;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.jivesoftware.whack.ExternalComponentManager;
 import org.xmpp.component.ComponentException;
+
+import com.buddycloud.channeldirectory.commons.ConfigurationUtils;
 
 /**
  * Creates and starts the Channel Directory XMPP component.
@@ -30,7 +31,6 @@ import org.xmpp.component.ComponentException;
  */
 public class Main {
 
-	private static final String CONFIGURATION_FILE = System.getenv("CHANNEL_DIRECTORY_HOME") + "/configuration.properties";
 	private static Logger LOGGER = Logger.getLogger(Main.class);
 	
 	/**
@@ -39,14 +39,9 @@ public class Main {
 	 * @throws IOException 
 	 * @throws InterruptedException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		
-		Properties configuration = new Properties();
-		try {
-			configuration.load(new FileInputStream(CONFIGURATION_FILE));
-		} catch (IOException e) {
-			LOGGER.fatal("Configuration could not be loaded.", e);
-		}
+		Properties configuration = ConfigurationUtils.loadConfiguration();
 		
 		ExternalComponentManager componentManager = new ExternalComponentManager(
 				configuration.getProperty("xmpp.host"),

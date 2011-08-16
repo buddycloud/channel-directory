@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.buddycloud.channeldirectory.search.handler.common.solr;
+package com.buddycloud.channeldirectory.commons.solr;
 
 import java.net.MalformedURLException;
 import java.util.Properties;

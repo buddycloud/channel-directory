@@ -15,12 +15,16 @@
  */
 package com.buddycloud.channeldirectory.crawler.node;
 
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.common.SolrInputDocument;
 import org.jivesoftware.smack.XMPPException;
@@ -30,7 +34,8 @@ import org.jivesoftware.smackx.packet.DiscoverInfo;
 import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 
-import com.buddycloud.channeldirectory.search.handler.common.solr.SolrServerFactory;
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
+import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 
@@ -42,20 +47,23 @@ import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
  */
 public class MetaDataCrawler implements NodeCrawler {
 
+	private static Logger LOGGER = Logger.getLogger(MetaDataCrawler.class);
 	private static final DecimalFormat LATLNG_FORMAT = new DecimalFormat("#0.00", 
 			new DecimalFormatSymbols(Locale.US));
 	
 	private Properties configuration;
+	private final ChannelDirectoryDataSource dataSource;
 	
-	public MetaDataCrawler(Properties configuration) {
+	public MetaDataCrawler(Properties configuration, ChannelDirectoryDataSource dataSource) {
 		this.configuration = configuration;
+		this.dataSource = dataSource;
 	}
 	
 	/* (non-Javadoc)
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
 	 */
 	@Override
-	public void crawl(Node node) throws XMPPException {
+	public void crawl(Node node, String server) throws XMPPException {
 		LeafNode leaf = (LeafNode) node;
 		DiscoverInfo discoverInfo = leaf.discoverInfo();
 		DataForm form = (DataForm) discoverInfo.getExtension("jabber:x:data");
@@ -91,9 +99,15 @@ public class MetaDataCrawler implements NodeCrawler {
 		channelData.setType(getChannelType(node.getId()));
 		
 		try {
+			updateSubscribedNode(node.getId(), server);
+		} catch (SQLException e1) {
+			LOGGER.warn("Could not update subscribed node.", e1);
+		}
+		
+		try {
 			insertOrUpate(channelData);
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.warn("Could not update node metadata.", e);
 		}
 		
 	}
@@ -123,6 +137,15 @@ public class MetaDataCrawler implements NodeCrawler {
 		SolrServer solrServer = SolrServerFactory.createChannelCore(configuration);
 		solrServer.add(object);
 		solrServer.commit();
+	}
+
+	private void updateSubscribedNode(String nodeName, String server) throws SQLException {
+		PreparedStatement prepareStatement = dataSource.prepareStatement(
+				"UPDATE subscribed_node SET metadata_updated = ? WHERE name = ? AND server = ?", 
+				new Date(System.currentTimeMillis()), nodeName, server);
+		prepareStatement.execute();
+		prepareStatement.close();
+		prepareStatement.getConnection().close();
 	}
 
 	private static String getChannelType(String jid) {

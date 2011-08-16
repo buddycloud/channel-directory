@@ -15,7 +15,6 @@
  */
 package com.buddycloud.channeldirectory.search.handler.common.mahout;
 
-import java.beans.PropertyVetoException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,8 +26,8 @@ import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLBooleanPrefJDBCDataM
 import org.apache.mahout.cf.taste.impl.model.jdbc.ReloadFromJDBCDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
 
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 /**
  * Reads taste data from a PostgreSQL database and stores
@@ -38,14 +37,12 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
  */
 public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataModel {
 
-	private final Properties properties;
-	private ComboPooledDataSource dataSource;
+	private ChannelDirectoryDataSource dataSource;
 	private DataModel dataModel;
 
 	public PostgreSQLRecommenderDataModel(Properties properties) {
-		this.properties = properties;
 		try {
-			createDataSource();
+			dataSource = new ChannelDirectoryDataSource(properties);
 			createDataModel();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -55,13 +52,7 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 	private void createDataModel() throws TasteException {
 		this.dataModel = new ReloadFromJDBCDataModel(
 				new PostgreSQLBooleanPrefJDBCDataModel(
-				dataSource));
-	}
-	
-	private void createDataSource() throws PropertyVetoException {
-		this.dataSource = new ComboPooledDataSource();
-		dataSource.setDriverClass("org.postgresql.Driver");
-		dataSource.setJdbcUrl(properties.getProperty("mahout.jdbc.url"));
+				dataSource.getDataSource()));
 	}
 
 	@Override

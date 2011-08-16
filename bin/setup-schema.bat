@@ -15,7 +15,7 @@ rem See the License for the specific language governing permissions and
 rem limitations under the License.
 
 rem ---------------------------------------------------------------------------
-rem Start script for the Channel Directory Crawler
+rem Start script for the Channel Directory Search Engine
 rem ---------------------------------------------------------------------------
 
 rem Guess CHANNEL_DIRECTORY_HOME if not defined
@@ -35,6 +35,6 @@ goto end
 
 rem Start the search engine
 cd %CHANNEL_DIRECTORY_HOME%
-java -cp .;.\*;.\lib\* com.buddycloud.channeldirectory.crawler.Main
+java -cp .;.\*;.\lib\* com.buddycloud.channeldirectory.commons.db.CreateSchema
 
 :end

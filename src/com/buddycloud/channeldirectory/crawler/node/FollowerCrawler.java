@@ -15,18 +15,19 @@
  */
 package com.buddycloud.channeldirectory.crawler.node;
 
-import java.beans.PropertyVetoException;
 import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.Properties;
 
+import org.apache.log4j.Logger;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.Subscription;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 
 /**
  * Responsible for crawling {@link Node} data
@@ -35,29 +36,19 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
  */
 public class FollowerCrawler implements NodeCrawler {
 
-	private Properties configuration;
-	private ComboPooledDataSource dataSource;
+	private static Logger LOGGER = Logger.getLogger(FollowerCrawler.class);
 	
-	public FollowerCrawler(Properties configuration) {
-		this.configuration = configuration;
-		setupDataSource();
+	private final ChannelDirectoryDataSource dataSource;
+	
+	public FollowerCrawler(ChannelDirectoryDataSource dataSource) {
+		this.dataSource = dataSource;
 	}
 
-	private void setupDataSource() {
-		this.dataSource = new ComboPooledDataSource();
-		dataSource.setJdbcUrl(configuration.getProperty("jdbc.url"));
-		try {
-			dataSource.setDriverClass("org.postgresql.Driver");
-		} catch (PropertyVetoException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	/* (non-Javadoc)
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
 	 */
 	@Override
-	public void crawl(Node node) throws Exception {
+	public void crawl(Node node, String server) throws Exception {
 		List<Subscription> subscriptions = node.getSubscriptions();
 		
 		String item = node.getId();
@@ -87,9 +78,25 @@ public class FollowerCrawler implements NodeCrawler {
 			selectTasteSt.close();
 			connection.close();
 		}
+	
+		try {
+			updateSubscribedNode(node.getId(), server);
+		} catch (SQLException e1) {
+			LOGGER.warn("Could not update subscribed node", e1);
+		}
 		
 	}
 
+	private void updateSubscribedNode(String nodeName, String server) throws SQLException {
+		
+		PreparedStatement prepareStatement = dataSource.prepareStatement(
+				"UPDATE subscribed_node SET subscribers_updated = ? WHERE name = ? AND server = ?", 
+				new Date(System.currentTimeMillis()), nodeName, server);
+		prepareStatement.execute();
+		prepareStatement.close();
+		prepareStatement.getConnection().close();
+	}
+	
 	private static Long fetchRowId(String user, String tableName, Connection connection)
 			throws SQLException {
 		

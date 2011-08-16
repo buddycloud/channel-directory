@@ -29,8 +29,9 @@ public interface NodeCrawler {
 	 * commits it into the channel directory database.
 	 * 
 	 * @param node
+	 * @param server 
 	 * @throws Exception
 	 */
-	void crawl(Node node) throws Exception;
+	void crawl(Node node, String server) throws Exception;
 	
 }

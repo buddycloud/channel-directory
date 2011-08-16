@@ -22,12 +22,12 @@ rem Guess CHANNEL_DIRECTORY_HOME if not defined
 set CURRENT_DIR=%cd%
 if not "%CHANNEL_DIRECTORY_HOME%" == "" goto gotHome
 set CHANNEL_DIRECTORY_HOME=%CURRENT_DIR%
-if exist "%CHANNEL_DIRECTORY_HOME%\resources\solr\start.jar" goto okHome
+if exist "%CHANNEL_DIRECTORY_HOME%\lib\channel-directory.jar" goto okHome
 cd ..
 set CHANNEL_DIRECTORY_HOME=%cd%
 cd %CURRENT_DIR%
 :gotHome
-if exist "%CHANNEL_DIRECTORY_HOME%\resources\solr\start.jar" goto okHome
+if exist "%CHANNEL_DIRECTORY_HOME%\lib\channel-directory.jar" goto okHome
 echo The CHANNEL_DIRECTORY_HOME environment variable is not defined correctly
 echo This environment variable is needed to run this program
 goto end

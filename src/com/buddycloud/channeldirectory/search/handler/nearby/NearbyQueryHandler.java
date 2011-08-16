@@ -31,8 +31,8 @@ import org.dom4j.Attribute;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
+import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.search.handler.common.ChannelQueryHandler;
-import com.buddycloud.channeldirectory.search.handler.common.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.search.rsm.RSM;

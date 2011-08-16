@@ -1,6 +1,9 @@
 CREATE TABLE subscribed_node (
    name VARCHAR(300),
    server VARCHAR(300),
+   metadata_updated TIMESTAMP,
+   subscribers_updated TIMESTAMP,
+   items_crawled TIMESTAMP,
    PRIMARY KEY (name, server)
 );
 

@@ -15,8 +15,6 @@
  */
 package com.buddycloud.channeldirectory.crawler;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Properties;
 
@@ -29,6 +27,8 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 
+import com.buddycloud.channeldirectory.commons.ConfigurationUtils;
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
 
 /**
@@ -37,7 +37,6 @@ import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
  */
 public class Main {
 
-	private static final String CONFIGURATION_FILE = System.getenv("CHANNEL_DIRECTORY_HOME") + "/configuration.properties";
 	private static Logger LOGGER = Logger.getLogger(Main.class);
 
 	/**
@@ -51,15 +50,17 @@ public class Main {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		Properties configuration = loadConfiguration();
+		Properties configuration = ConfigurationUtils.loadConfiguration();
 		XMPPConnection connection = createConnection(configuration);
 		addTraceListeners(connection);
 		
 		PubSubManagers managers = new PubSubManagers(connection);
-		PubSubSubscriptionListener listener = new PubSubSubscriptionListener(configuration, managers);
-		listener.start();
+		ChannelDirectoryDataSource dataSource = new ChannelDirectoryDataSource(configuration);
 		
-		new PubSubServerCrawler(configuration, managers, listener).start();
+		PubSubSubscriptionListener listener = new PubSubSubscriptionListener(
+				configuration, managers, dataSource);
+		
+		new PubSubServerCrawler(configuration, managers, dataSource, listener).start();
 	}
 
 	private static void addTraceListeners(XMPPConnection connection) {
@@ -101,17 +102,6 @@ public class Main {
 		connection.login(userName, configuration.getProperty("crawler.xmpp.password"));
 		
 		return connection;
-	}
-
-	private static Properties loadConfiguration() throws IOException {
-		Properties configuration = new Properties();
-		try {
-			configuration.load(new FileInputStream(CONFIGURATION_FILE));
-		} catch (IOException e) {
-			LOGGER.fatal("Configuration could not be loaded.", e);
-			throw e;
-		}
-		return configuration;
 	}
 
 }
