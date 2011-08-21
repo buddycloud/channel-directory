@@ -17,6 +17,7 @@ package com.buddycloud.channeldirectory.commons.db;
 
 import java.beans.PropertyVetoException;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -47,8 +48,15 @@ public class CreateSchema {
 		ChannelDirectoryDataSource channelDirectoryDataSource = new ChannelDirectoryDataSource(
 				ConfigurationUtils.loadConfiguration());
 		
+		runScript(channelDirectoryDataSource, SQL_CREATE_FILE);
+		
+	}
+
+	private static void runScript(
+			ChannelDirectoryDataSource channelDirectoryDataSource, String sqlFile)
+			throws IOException, FileNotFoundException, SQLException {
 		List<String> readLines = IOUtils.readLines(
-				new FileInputStream(SQL_CREATE_FILE));
+				new FileInputStream(sqlFile));
 		
 		Connection connection = channelDirectoryDataSource.getConnection();
 		StringBuilder statementStr = new StringBuilder();
@@ -64,7 +72,6 @@ public class CreateSchema {
 		}
 		
 		connection.close();
-		
 	}
 	
 }

@@ -57,6 +57,8 @@ public class FollowerCrawler implements NodeCrawler {
 		
 			String user = subscription.getJid();
 			
+			enqueueNewServer(user);
+			
 			Connection connection = dataSource.getConnection();
 			
 			Long userId = fetchRowId(user, "t_user", connection);
@@ -74,9 +76,7 @@ public class FollowerCrawler implements NodeCrawler {
 				insertTasteSt.close();
 			}
 			
-			selectTasteResult.close();
-			selectTasteSt.close();
-			connection.close();
+			ChannelDirectoryDataSource.close(selectTasteSt);
 		}
 	
 		try {
@@ -87,14 +87,33 @@ public class FollowerCrawler implements NodeCrawler {
 		
 	}
 
+	/**
+	 * @param user
+	 * @throws SQLException 
+	 */
+	private void enqueueNewServer(String user) throws SQLException {
+		String server = user.substring(user.indexOf('@'));
+		
+		PreparedStatement statement = dataSource.prepareStatement(
+				"INSERT INTO subscribed_server(name) values (?)", 
+				server);
+		
+		try {
+			statement.execute();
+		} catch (SQLException e) {
+			LOGGER.warn("Server already inserted " + server);
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
+	}
+
 	private void updateSubscribedNode(String nodeName, String server) throws SQLException {
 		
 		PreparedStatement prepareStatement = dataSource.prepareStatement(
 				"UPDATE subscribed_node SET subscribers_updated = ? WHERE name = ? AND server = ?", 
 				new Date(System.currentTimeMillis()), nodeName, server);
 		prepareStatement.execute();
-		prepareStatement.close();
-		prepareStatement.getConnection().close();
+		ChannelDirectoryDataSource.close(prepareStatement);
 	}
 	
 	private static Long fetchRowId(String user, String tableName, Connection connection)
@@ -115,12 +134,11 @@ public class FollowerCrawler implements NodeCrawler {
 			insertUserResult.next();
 			userId = insertUserResult.getLong("id");
 			
-			insertUserResult.close();
-			insertRowSt.close();
+			ChannelDirectoryDataSource.close(insertRowSt);
 		}
 		
-		selectRowResult.close();
-		selectRowSt.close();
+		ChannelDirectoryDataSource.close(selectRowSt);
+		
 		return userId;
 	}
 

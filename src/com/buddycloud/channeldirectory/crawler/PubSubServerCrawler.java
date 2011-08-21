@@ -16,7 +16,9 @@
 package com.buddycloud.channeldirectory.crawler;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,6 +46,7 @@ import com.buddycloud.channeldirectory.crawler.node.PostCrawler;
 public class PubSubServerCrawler {
 
 	private static Logger LOGGER = Logger.getLogger(PubSubServerCrawler.class);
+	private static long DEF_CRAWL_INTERVAL = 60000 * 30; // 30 minutes
 	
 	private final Properties configuration;
 	private final PubSubManagers managers;
@@ -60,15 +63,32 @@ public class PubSubServerCrawler {
 	
 	public void start() throws XMPPException {
 		
-		String serversToCrawlStr = configuration.getProperty("crawler.servertocrawl");
-		String[] serversToCrawl = serversToCrawlStr.split(",");
-		
 		List<NodeCrawler> nodeCrawlers = new LinkedList<NodeCrawler>();
 		nodeCrawlers.add(new MetaDataCrawler(configuration, dataSource));
 		nodeCrawlers.add(new PostCrawler(configuration));
 		nodeCrawlers.add(new FollowerCrawler(dataSource));
 		
+		try {
+			insertServers();
+		} catch (SQLException e1) {
+			LOGGER.error(e1);
+			throw new XMPPException(e1);
+		}
+		
+		String crawlIntervalStr = configuration.getProperty("crawler.crawlinterval");
+		
+		long crawlInterval = crawlIntervalStr == null ? DEF_CRAWL_INTERVAL
+				: Long.parseLong(crawlIntervalStr);
+		
+		
 		while (true) {
+			
+			List<String> serversToCrawl = new LinkedList<String>();
+			try {
+				serversToCrawl = retrieveServers();
+			} catch (SQLException e1) {
+				LOGGER.error(e1);
+			}
 			
 			for (String server : serversToCrawl) {
 				PubSubManager manager = managers.getPubSubManager(server);
@@ -109,13 +129,58 @@ public class PubSubServerCrawler {
 			}
 			
 			try {
-				Thread.sleep(60000 * 5);
+				Thread.sleep(crawlInterval);
 			} catch (InterruptedException e) {
 				LOGGER.error(e);
 			}
 		}
 	}
 	
+	/**
+	 * @return
+	 * @throws SQLException 
+	 */
+	private List<String> retrieveServers() throws SQLException {
+		Statement statement = dataSource.createStatement();
+		
+		ResultSet resultSet = statement.executeQuery("SELECT * FROM subscribed_server");
+		
+		List<String> serversToCrawl = new LinkedList<String>();
+		
+		while (resultSet.next()) {
+			serversToCrawl.add(resultSet.getString("name"));
+		}
+		
+		ChannelDirectoryDataSource.close(statement);
+		
+		return serversToCrawl;
+	}
+
+	/**
+	 * @throws SQLException 
+	 * 
+	 */
+	private void insertServers() throws SQLException {
+		String serversToCrawlStr = configuration.getProperty("crawler.servertocrawl");
+		String[] serversToCrawl = serversToCrawlStr.split(";");
+		
+		for (String server : serversToCrawl) {
+			
+			PreparedStatement statement = dataSource.prepareStatement(
+					"INSERT INTO subscribed_server(name) values (?)", 
+					server);
+			
+			try {
+				statement.execute();
+			} catch (SQLException e) {
+				LOGGER.warn("Server already inserted " + server);
+			} finally {
+				ChannelDirectoryDataSource.close(statement);
+			}
+		}
+		
+	}
+
 	/**
 	 * @throws SQLException 
 	 * 
@@ -125,16 +190,13 @@ public class PubSubServerCrawler {
 		PreparedStatement statement = dataSource.prepareStatement(
 				"INSERT INTO subscribed_node(name, server) values (?, ?)", 
 				node.getId(), server);
-		statement.setString(0, node.getId());
-		statement.setString(1, server);
 		
 		try {
 			statement.execute();
 		} catch (SQLException e) {
 			LOGGER.warn("Node already subscribed " + node + " " + server);
 		} finally {
-			statement.close();
-			statement.getConnection().close();
+			ChannelDirectoryDataSource.close(statement);
 		}
 	}
 	

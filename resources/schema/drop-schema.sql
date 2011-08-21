@@ -1,3 +1,4 @@
+ DROP TABLE IF EXISTS subscribed_server;
  DROP TABLE IF EXISTS subscribed_node;
  DROP TABLE IF EXISTS taste_preferences;
  DROP TABLE IF EXISTS item;

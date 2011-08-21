@@ -1,3 +1,8 @@
+CREATE TABLE subscribed_server (
+   name VARCHAR(300),
+   PRIMARY KEY (name)
+);
+
 CREATE TABLE subscribed_node (
    name VARCHAR(300),
    server VARCHAR(300),

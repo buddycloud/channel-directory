@@ -104,7 +104,12 @@ public class PubSubSubscriptionListener implements ItemDeleteListener, ItemEvent
 	 * @throws SQLException 
 	 */
 	public void listen(Node node, String server) throws XMPPException, SQLException {
-		node.subscribe(userId);
+		
+		try {
+			node.subscribe(userId);
+		} catch (Exception e) {
+			LOGGER.warn("Node " + node.getId()  + " is already subscribed.");
+		}
 		node.addConfigurationListener(this);
 		node.addItemDeleteListener(this);
 		node.addItemEventListener(this);

@@ -53,6 +53,16 @@ public class ChannelDirectoryDataSource {
 		return prepareStatement;
 	}
 	
+	public static void close(Statement statement) {
+		try {
+			Connection connection = statement.getConnection();
+			statement.close();
+			connection.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public Connection getConnection() throws SQLException {
 		return dataSource.getConnection();
 	}

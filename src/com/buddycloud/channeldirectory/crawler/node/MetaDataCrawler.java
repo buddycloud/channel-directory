@@ -144,8 +144,7 @@ public class MetaDataCrawler implements NodeCrawler {
 				"UPDATE subscribed_node SET metadata_updated = ? WHERE name = ? AND server = ?", 
 				new Date(System.currentTimeMillis()), nodeName, server);
 		prepareStatement.execute();
-		prepareStatement.close();
-		prepareStatement.getConnection().close();
+		ChannelDirectoryDataSource.close(prepareStatement);
 	}
 
 	private static String getChannelType(String jid) {
