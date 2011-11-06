@@ -31,8 +31,8 @@
 				<include name="lib/**"/>
 				<include name="resources/solr/**"/>
 				<include name="bin/**"/>
-				<exclude name="resources/solr/multicore/channels/data"/>
-				<exclude name="resources/solr/multicore/posts/data"/>
+				<exclude name="resources/solr/multicore/channels/data/**"/>
+				<exclude name="resources/solr/multicore/posts/data/**"/>
 				<include name="configuration.properties"/>
 				<include name="LICENSE"/>
 				<include name="README"/>
