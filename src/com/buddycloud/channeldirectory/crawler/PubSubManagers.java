@@ -44,5 +44,12 @@ public class PubSubManagers {
 		}
 		return pubSubManager;
 	}
+
+	/**
+	 * @return
+	 */
+	public Connection getConnection() {
+		return connection;
+	}
 	
 }

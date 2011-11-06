@@ -25,11 +25,14 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
+import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smackx.packet.DiscoverItems;
+import org.jivesoftware.smackx.packet.RSMSet;
 import org.jivesoftware.smackx.packet.DiscoverItems.Item;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
+import org.jivesoftware.smackx.pubsub.packet.SyncPacketSend;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.crawler.node.FollowerCrawler;
@@ -111,22 +114,33 @@ public class PubSubServerCrawler {
 					continue;
 				}
 				
-				Iterator<Item> idsIterator = discoverInfo.getItems();
+				List<Item> items = fetchItems(discoverInfo, managers.getConnection());
 				
-				while (idsIterator.hasNext()) {
-					Item item = idsIterator.next();
+				for (Item item : items) {
+					Node node = null;
+					try {
+						node = manager.getNode(item.getNode());
+					} catch (Exception e) {
+						LOGGER.warn("Could not read node [" + item.getNode() + "] " +
+								"from server [" + server + "]", e);
+						continue;
+					}
+					
+					insertNode(node, server);
+					
 					for (NodeCrawler nodeCrawler : nodeCrawlers) {
 						try {
-							Node node = manager.getNode(item.getName());
 							nodeCrawler.crawl(node, server);
-							insertNode(node, server);
 						} catch (Exception e) {
-							LOGGER.warn("Could not crawl node [" + item.getName() + "] " +
+							LOGGER.warn("Could not crawl node [" + item.getNode() + "] " +
 									"from server [" + server + "]", e);
 						}
 					}
 				}
+				
 			}
+			
+			LOGGER.debug("Fetched all nodes, going to sleep");
 			
 			try {
 				Thread.sleep(crawlInterval);
@@ -136,6 +150,40 @@ public class PubSubServerCrawler {
 		}
 	}
 	
+	/**
+	 * @param discoverInfo
+	 * @param connection 
+	 * @return
+	 * @throws XMPPException 
+	 */
+	private List<Item> fetchItems(DiscoverItems discoverInfo, Connection connection) throws XMPPException {
+		LinkedList<Item> items = new LinkedList<DiscoverItems.Item>();
+		
+		while (true) {
+			Iterator<Item> itemIterator = discoverInfo.getItems();
+			
+			while (itemIterator.hasNext()) {
+				items.add(itemIterator.next());
+			}
+			
+			if (discoverInfo.getRsmSet() == null || 
+					items.size() == discoverInfo.getRsmSet().getCount()) {
+				break;
+			}
+			
+			DiscoverItems request = new DiscoverItems();
+			request.setTo(discoverInfo.getFrom());
+			
+			RSMSet rsmSet = new RSMSet();
+			rsmSet.setAfter(discoverInfo.getRsmSet().getLast());
+			request.setRsmSet(rsmSet);
+			
+			discoverInfo = (DiscoverItems) SyncPacketSend.getReply(connection, request);
+		}
+		
+		return items;
+	}
+
 	/**
 	 * @return
 	 * @throws SQLException 
@@ -185,11 +233,17 @@ public class PubSubServerCrawler {
 	 * @throws SQLException 
 	 * 
 	 */
-	private void insertNode(Node node, String server) throws SQLException {
+	private void insertNode(Node node, String server) {
 		
-		PreparedStatement statement = dataSource.prepareStatement(
-				"INSERT INTO subscribed_node(name, server) values (?, ?)", 
-				node.getId(), server);
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"INSERT INTO subscribed_node(name, server) values (?, ?)", 
+					node.getId(), server);
+		} catch (SQLException e1) {
+			LOGGER.warn("Could not insert node " + node + " " + server, e1);
+			return;
+		}
 		
 		try {
 			statement.execute();
