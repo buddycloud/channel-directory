@@ -45,6 +45,10 @@ import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
  */
 public class ChannelRecommender {
 
+	/**
+	 * 
+	 */
+	private static final int MAX_CACHE_SIZE = 100000;
 	private static final String POSTGRESQL_MODEL = "postgresql";
 	private static final String INMEMORY_MODEL = "memory";
 	
@@ -60,7 +64,7 @@ public class ChannelRecommender {
 		DataModel dataModel = recommenderDataModel.getDataModel();
 
 		UserSimilarity userSimilarity = new CachingUserSimilarity(
-				new LogLikelihoodSimilarity(dataModel), dataModel);
+				new LogLikelihoodSimilarity(dataModel), MAX_CACHE_SIZE);
 		this.userNeighborhood = new NearestNUserNeighborhood(10,
 				Double.NEGATIVE_INFINITY, userSimilarity, dataModel, 1.0);
 		this.userRecommender = new GenericBooleanPrefUserBasedRecommender(dataModel,
