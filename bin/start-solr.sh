@@ -19,11 +19,10 @@
 # Start script for the Channel Directory Solr
 # -----------------------------------------------------------------------------
 
-/bin/bash set-env.sh || exit 1
-
 # Go to Solr home and start it
 
-cd "$CHANNEL_DIRECTORY_HOME"/resources/solr
-java -Dsolr.solr.home=multicore -jar start.jar
+BIN_DIR=`dirname $0`
+cd "$BIN_DIR"/../resources/solr
+java -Dsolr.solr.home=multicore -jar start.jar &
 
 exit 0

@@ -19,11 +19,10 @@
 # Start script for the Channel Directory Solr
 # -----------------------------------------------------------------------------
 
-/bin/bash set-env.sh || exit 1
-
 # Go to ChannelDir home and invoke the CreateSchema class
 
-cd "$CHANNEL_DIRECTORY_HOME"
+BIN_DIR=`dirname $0`
+cd "$BIN_DIR"/..
 java -cp .:./*:./lib/* com.buddycloud.channeldirectory.commons.db.CreateSchema
 
 exit 0

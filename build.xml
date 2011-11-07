@@ -3,7 +3,8 @@
 	<property name="target.dir" value="target" />
 	<property name="lib.dir" value="lib" />
 	<property name="classes.dir" value="${target.dir}/classes" />
-
+	<property name="src.dir" value="src" />
+	
 	<target name="clean">
 		<delete dir="${target.dir}"/>
 	</target>
@@ -26,10 +27,12 @@
 	</target>
 
 	<target name="package" depends="jar">
+
 		<zip destfile="${target.dir}/${ant.project.name}.zip">
 			<fileset dir="." defaultexcludes="true">
 				<include name="lib/**"/>
 				<include name="resources/solr/**"/>
+				<include name="resources/schema/**"/>
 				<include name="bin/**"/>
 				<exclude name="resources/solr/multicore/channels/data/**"/>
 				<exclude name="resources/solr/multicore/posts/data/**"/>
@@ -37,10 +40,15 @@
 				<include name="LICENSE"/>
 				<include name="README"/>
 			</fileset>
-			
+
 			<fileset dir="${target.dir}">
 				<include name="${ant.project.name}.jar"/>
 			</fileset>
+
+			<fileset dir="${src.dir}">
+				<include name="log4j.properties" />
+			</fileset>
+
 		</zip>
 
 	</target>
