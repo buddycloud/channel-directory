@@ -71,15 +71,15 @@ public class MetadataQueryHandler extends ChannelQueryHandler {
 		
 		RSM rsm = RSMUtils.parseRSM(queryElement);
 		
-		List<ChannelData> nearbyObjects;
+		List<ChannelData> channelObjects;
 		try {
-			nearbyObjects = findObjectsByMetadata(rsm, search);
+			channelObjects = findObjectsByMetadata(rsm, search);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
 		}
 		
-		return createIQResponse(iq, nearbyObjects, rsm);
+		return createIQResponse(iq, channelObjects, rsm);
 	}
 
 	private List<ChannelData> findObjectsByMetadata(RSM rsm, String search) throws MalformedURLException, SolrServerException {

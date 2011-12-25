@@ -31,7 +31,9 @@ public class PostData extends ContentData {
 	private Geolocation geolocation;
 	
 	private String author;
+	private String authorUri;
 	private String affiliation;
+	
 	private String content;
 	
 	private String serverId;
@@ -41,6 +43,7 @@ public class PostData extends ContentData {
 	
 	private String inReplyTo;
 	private Date updated;
+
 	
 	public String getAuthor() {
 		return author;
@@ -120,6 +123,20 @@ public class PostData extends ContentData {
 
 	public String getServerId() {
 		return serverId;
+	}
+
+	/**
+	 * @param authorUri
+	 */
+	public void setAuthorURI(String authorUri) {
+		this.authorUri = authorUri;
+	}
+	
+	/**
+	 * @return the authorUri
+	 */
+	public String getAuthorUri() {
+		return authorUri;
 	}
 	
 }

@@ -56,7 +56,7 @@ public class SolrRSMUtils {
 		
 		if (lastIndex >= 0) {
 			query.setStart(initialIndex);
-			query.setRows(lastIndex - initialIndex);
+			query.setRows(lastIndex - initialIndex + 1);
 		}
 		
 		rsm.setIndex(initialIndex);
