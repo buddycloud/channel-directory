@@ -16,9 +16,10 @@
 package com.buddycloud.channeldirectory.crawler.node;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -46,6 +47,7 @@ public class PostCrawler implements NodeCrawler {
 
 	private static final DecimalFormat LATLNG_FORMAT = new DecimalFormat("#0.00", 
 			new DecimalFormatSymbols(Locale.US));
+	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 	
 	private Properties configuration;
 	
@@ -56,6 +58,7 @@ public class PostCrawler implements NodeCrawler {
 	/* (non-Javadoc)
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void crawl(Node node, String server) throws Exception {
 		LeafNode leafNode = (LeafNode) node;
@@ -71,18 +74,19 @@ public class PostCrawler implements NodeCrawler {
 			
 			Element authorElement = atomEntry.element("author");
 			String authorName = authorElement.elementText("name");
-			String authorJid = authorElement.elementText("jid");
+			String authorUri = authorElement.elementText("uri");
 			String authorAffiliation = authorElement.elementText("affiliation");
 			
-			postData.setAuthor(authorJid);
+			postData.setAuthor(authorName);
 			postData.setAffiliation(authorAffiliation);
+			postData.setAuthorURI(authorUri);
 			
 			String content = atomEntry.elementText("content");
 			String updated = atomEntry.elementText("updated");
 			String id = atomEntry.elementText("id");
 			
 			postData.setContent(content);
-			postData.setUpdated(new Date(Date.parse(updated)));
+			postData.setUpdated(DATE_FORMAT.parse(updated));
 			postData.setId(id);
 			
 			Element geolocElement = atomEntry.element("geoloc");
@@ -104,7 +108,7 @@ public class PostCrawler implements NodeCrawler {
 				postData.setGeolocation(geolocation);
 			}
 			
-			Element inReplyToElement = atomEntry.element("thr:in-reply-to");
+			Element inReplyToElement = atomEntry.element("in-reply-to");
 			if (inReplyToElement != null) {
 				String replyRef = inReplyToElement.attributeValue("ref");
 				postData.setInReplyTo(replyRef);

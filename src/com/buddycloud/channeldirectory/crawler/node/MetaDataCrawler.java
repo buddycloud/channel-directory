@@ -96,7 +96,7 @@ public class MetaDataCrawler implements NodeCrawler {
 			channelData.setGeolocation(null);
 		}
 		
-		channelData.setType(getChannelType(node.getId()));
+		channelData.setChannelType(getChannelType(node.getId()));
 		
 		try {
 			updateSubscribedNode(node.getId(), server);
