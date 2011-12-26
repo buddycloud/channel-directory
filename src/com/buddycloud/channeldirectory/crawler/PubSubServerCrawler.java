@@ -130,7 +130,9 @@ public class PubSubServerCrawler {
 					
 					for (NodeCrawler nodeCrawler : nodeCrawlers) {
 						try {
-							nodeCrawler.crawl(node, server);
+							if (nodeCrawler.accept(node)) {
+								nodeCrawler.crawl(node, server);
+							}
 						} catch (Exception e) {
 							LOGGER.warn("Could not crawl node [" + item.getNode() + "] " +
 									"from server [" + server + "]", e);

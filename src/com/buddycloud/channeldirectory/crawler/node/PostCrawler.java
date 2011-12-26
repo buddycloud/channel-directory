@@ -61,7 +61,17 @@ public class PostCrawler implements NodeCrawler {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void crawl(Node node, String server) throws Exception {
+		
 		LeafNode leafNode = (LeafNode) node;
+		
+		String nodeFullJid = node.getId();
+		String[] nodeFullJidSplitted = nodeFullJid.split("/");
+		
+		if (nodeFullJidSplitted.length < 4) {
+			return;
+		}
+		
+		String nodeId = nodeFullJidSplitted[2];
 		
 		for (Item item : leafNode.getItems()) {
 			PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
@@ -72,21 +82,24 @@ public class PostCrawler implements NodeCrawler {
 			
 			PostData postData = new PostData();
 			
+			postData.setParentFullId(nodeFullJid);
+			postData.setParentSimpleId(nodeId);
+			
 			Element authorElement = atomEntry.element("author");
 			String authorName = authorElement.elementText("name");
 			String authorUri = authorElement.elementText("uri");
-			String authorAffiliation = authorElement.elementText("affiliation");
 			
 			postData.setAuthor(authorName);
-			postData.setAffiliation(authorAffiliation);
 			postData.setAuthorURI(authorUri);
 			
 			String content = atomEntry.elementText("content");
 			String updated = atomEntry.elementText("updated");
+			String published = atomEntry.elementText("published");
 			String id = atomEntry.elementText("id");
 			
 			postData.setContent(content);
 			postData.setUpdated(DATE_FORMAT.parse(updated));
+			postData.setPublished(DATE_FORMAT.parse(published));
 			postData.setId(id);
 			
 			Element geolocElement = atomEntry.element("geoloc");
@@ -125,15 +138,15 @@ public class PostCrawler implements NodeCrawler {
 		SolrInputDocument postDocument = new SolrInputDocument();
 		
 		postDocument.addField("id", postData.getId());
-		postDocument.addField("leafnode_name", postData.getLeafNodeName());
-		postDocument.addField("leafnode_id", postData.getLeafNodeId());
-		postDocument.addField("message_id", postData.getMessageId());
+		postDocument.addField("parent_simpleid", postData.getParentSimpleId());
+		postDocument.addField("parent_fullid", postData.getParentFullId());
 		postDocument.addField("inreplyto", postData.getInReplyTo());
 		postDocument.addField("author", postData.getAuthor());
-		postDocument.addField("affiliation", postData.getAffiliation());
+		postDocument.addField("author-uri", postData.getAuthorUri());
 		postDocument.addField("content", postData.getContent());
 
 		postDocument.addField("updated", postData.getUpdated());
+		postDocument.addField("published", postData.getPublished());
 
 		Geolocation geolocation = postData.getGeolocation();
 		
@@ -155,5 +168,13 @@ public class PostCrawler implements NodeCrawler {
 		SolrServer solrServer = SolrServerFactory.createPostCore(configuration);
 		solrServer.add(postDocument);
 		solrServer.commit();
+	}
+
+	/* (non-Javadoc)
+	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#accept(org.jivesoftware.smackx.pubsub.Node)
+	 */
+	@Override
+	public boolean accept(Node node) {
+		return node.getId().endsWith("/posts");
 	}
 }

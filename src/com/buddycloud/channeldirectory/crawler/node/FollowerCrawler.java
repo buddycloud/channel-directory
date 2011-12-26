@@ -142,4 +142,12 @@ public class FollowerCrawler implements NodeCrawler {
 		return userId;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#accept(org.jivesoftware.smackx.pubsub.Node)
+	 */
+	@Override
+	public boolean accept(Node node) {
+		return node.getId().endsWith("/subscriptions");
+	}
+
 }

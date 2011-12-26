@@ -18,8 +18,11 @@ package com.buddycloud.channeldirectory.crawler.node;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
@@ -50,6 +53,8 @@ public class MetaDataCrawler implements NodeCrawler {
 	private static Logger LOGGER = Logger.getLogger(MetaDataCrawler.class);
 	private static final DecimalFormat LATLNG_FORMAT = new DecimalFormat("#0.00", 
 			new DecimalFormatSymbols(Locale.US));
+	private static final DateFormat DATE_FORMAT = new SimpleDateFormat(
+			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 	
 	private Properties configuration;
 	private final ChannelDirectoryDataSource dataSource;
@@ -64,6 +69,16 @@ public class MetaDataCrawler implements NodeCrawler {
 	 */
 	@Override
 	public void crawl(Node node, String server) throws XMPPException {
+		
+		String nodeFullJid = node.getId();
+		String[] nodeFullJidSplitted = nodeFullJid.split("/");
+		
+		if (nodeFullJidSplitted.length < 4) {
+			return;
+		}
+		
+		String nodeId = nodeFullJidSplitted[2];
+		
 		LeafNode leaf = (LeafNode) node;
 		DiscoverInfo discoverInfo = leaf.discoverInfo();
 		DataForm form = (DataForm) discoverInfo.getExtension("jabber:x:data");
@@ -72,22 +87,32 @@ public class MetaDataCrawler implements NodeCrawler {
 		
 		Geolocation geolocation = new Geolocation();
 		channelData.setGeolocation(geolocation);
-		channelData.setId(node.getId());
+		channelData.setId(nodeId);
 
 		Iterator<FormField> fields = form.getFields();
 		
 		while (fields.hasNext()) {
 			FormField formField = fields.next();
+			String fieldValue = formField.getValues().next();
+			
 			if (formField.getVariable().equals("pubsub#title")) {
-				channelData.setTitle(formField.getValues().next());
+				channelData.setTitle(fieldValue);
 			} else if (formField.getVariable().equals("pubsub#description")) {
-				channelData.setDescription(formField.getValues().next());
+				channelData.setDescription(fieldValue);
 			} else if (formField.getVariable().equals("x-buddycloud#geoloc-lat")) {
-				geolocation.setLat(Double.valueOf(formField.getValues().next()));
+				geolocation.setLat(Double.valueOf(fieldValue));
 			} else if (formField.getVariable().equals("x-buddycloud#geoloc-lon")) {
-				geolocation.setLng(Double.valueOf(formField.getValues().next()));
+				geolocation.setLng(Double.valueOf(fieldValue));
 			} else if (formField.getVariable().equals("x-buddycloud#geoloc-text")) {
-				geolocation.setText(formField.getValues().next());
+				geolocation.setText(fieldValue);
+			} else if (formField.getVariable().equals("pubsub#creation_date")) {
+				try {
+					channelData.setCreationDate(DATE_FORMAT.parse(fieldValue));
+				} catch (ParseException e) {
+					LOGGER.warn("Unable to parse creation date for [" + nodeId + "].", e);
+				}
+			} else if (formField.getVariable().equals("buddycloud#channel_type")) {
+				channelData.setChannelType(fieldValue);
 			}
 		}
 		
@@ -96,10 +121,8 @@ public class MetaDataCrawler implements NodeCrawler {
 			channelData.setGeolocation(null);
 		}
 		
-		channelData.setChannelType(getChannelType(node.getId()));
-		
 		try {
-			updateSubscribedNode(node.getId(), server);
+			updateSubscribedNode(nodeId, server);
 		} catch (SQLException e1) {
 			LOGGER.warn("Could not update subscribed node.", e1);
 		}
@@ -132,6 +155,7 @@ public class MetaDataCrawler implements NodeCrawler {
 		object.setField("jid", channelData.getId());
 		object.setField("title", channelData.getTitle());
 		object.setField("description", channelData.getDescription());
+		object.setField("creation-date", channelData.getCreationDate());
 		object.setField("channel-type", channelData.getType()); //topic or personal
 		
 		SolrServer solrServer = SolrServerFactory.createChannelCore(configuration);
@@ -147,9 +171,12 @@ public class MetaDataCrawler implements NodeCrawler {
 		ChannelDirectoryDataSource.close(prepareStatement);
 	}
 
-	private static String getChannelType(String jid) {
-		String type = jid.substring(0, jid.indexOf('/', 1));
-		return type.equals("/channel") ? "topic" : "personal";
+	/* (non-Javadoc)
+	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#accept(org.jivesoftware.smackx.pubsub.Node)
+	 */
+	@Override
+	public boolean accept(Node node) {
+		return node.getId().endsWith("/posts");
 	}
-	
+
 }

@@ -34,4 +34,13 @@ public interface NodeCrawler {
 	 */
 	void crawl(Node node, String server) throws Exception;
 	
+	
+	/**
+	 * Returns whether a {@link Node} should be processed
+	 * by this {@link NodeCrawler}
+	 * 
+	 * @param node
+	 * @return
+	 */
+	boolean accept(Node node);
 }
