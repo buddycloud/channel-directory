@@ -98,15 +98,15 @@
   <!-- general -->
   <field name="id" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
   <field name="author" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
-  <field name="affiliation" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="author-uri" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
   
   <field name="content" type="text" indexed="true" stored="true" multiValued="false" required="true"/> 
  
-  <field name="leafnode_name" type="string" indexed="true" stored="true" multiValued="false"/>
-  <field name="leafnode_id" type="string" indexed="true" stored="true" multiValued="false"/>
-  <field name="message_id" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="parent_simpleid" type="string" indexed="true" stored="true" multiValued="false"/>
+  <field name="parent_fullid" type="string" indexed="true" stored="true" multiValued="false"/>
   <field name="inreplyto" type="string" indexed="true" stored="true" multiValued="false"/>
   <field name="updated" type="date" indexed="true" stored="true"  multiValued="false"/>
+  <field name="published" type="date" indexed="true" stored="true"  multiValued="false"/>
   
   <field name="geoloc" type="location" indexed="true" stored="true" multiValued="false" />
   <field name="geoloc_text" type="text" indexed="true" stored="true" multiValued="false" />
@@ -140,8 +140,8 @@
  
  <copyField source="content" dest="text"/>
  
- <copyField source="leafnode_name" dest="text"/>
- <copyField source="leafnode_id" dest="text"/>
+ <copyField source="parent_simpleid" dest="text"/>
+ <copyField source="parent_fullid" dest="text"/>
  <copyField source="message_id" dest="text"/>
  
  <copyField source="inreplyto" dest="text"/>
