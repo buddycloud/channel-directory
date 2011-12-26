@@ -32,18 +32,18 @@ public class PostData extends ContentData {
 	
 	private String author;
 	private String authorUri;
-	private String affiliation;
 	
 	private String content;
 	
 	private String serverId;
-	private String leafNodeName;
-	private String leafNodeId;
-	private String messageId;
 	
 	private String inReplyTo;
+	
 	private Date updated;
-
+	private Date published;
+	
+	private String parentSimpleId;
+	private String parentFullId;
 	
 	public String getAuthor() {
 		return author;
@@ -53,44 +53,12 @@ public class PostData extends ContentData {
 		this.author = author;
 	}
 
-	public String getAffiliation() {
-		return affiliation;
-	}
-
-	public void setAffiliation(String affiliation) {
-		this.affiliation = affiliation;
-	}
-
 	public String getContent() {
 		return content;
 	}
 
 	public void setContent(String content) {
 		this.content = content;
-	}
-
-	public String getLeafNodeName() {
-		return leafNodeName;
-	}
-
-	public void setLeafNodeName(String leafNodeName) {
-		this.leafNodeName = leafNodeName;
-	}
-
-	public String getLeafNodeId() {
-		return leafNodeId;
-	}
-
-	public void setLeafNodeId(String leafNodeId) {
-		this.leafNodeId = leafNodeId;
-	}
-
-	public String getMessageId() {
-		return messageId;
-	}
-
-	public void setMessageId(String messageId) {
-		this.messageId = messageId;
 	}
 
 	public String getInReplyTo() {
@@ -137,6 +105,30 @@ public class PostData extends ContentData {
 	 */
 	public String getAuthorUri() {
 		return authorUri;
+	}
+
+	public Date getPublished() {
+		return published;
+	}
+
+	public void setPublished(Date published) {
+		this.published = published;
+	}
+
+	public String getParentSimpleId() {
+		return parentSimpleId;
+	}
+
+	public void setParentSimpleId(String parentSimpleId) {
+		this.parentSimpleId = parentSimpleId;
+	}
+
+	public String getParentFullId() {
+		return parentFullId;
+	}
+
+	public void setParentFullId(String parentFullId) {
+		this.parentFullId = parentFullId;
 	}
 	
 }

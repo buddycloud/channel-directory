@@ -15,6 +15,8 @@
  */
 package com.buddycloud.channeldirectory.search.handler.common;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -38,6 +40,9 @@ import com.buddycloud.channeldirectory.search.utils.GeolocationUtils;
  */
 public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 
+	private static final DateFormat DATE_FORMAT = new SimpleDateFormat(
+			"yyyy-MM-dd'T'HH:mm:ssZ");
+	
 	public ChannelQueryHandler(String namespace, Properties properties) {
 		super(namespace, properties);
 	}
@@ -50,24 +55,33 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 		
 		Element queryElement = result.getElement().addElement("query", getNamespace());
 		
-		for (ChannelData nearbyObject : allContent) {
+		for (ChannelData channelObject : allContent) {
 			Element itemElement = queryElement.addElement("item");
 			
 			FeatureUtils.addAttribute(options, itemElement, "jid",
-					nearbyObject.getId());
+					channelObject.getId());
 			FeatureUtils.addAttribute(options, itemElement, "type",
-					nearbyObject.getType());
+					channelObject.getType());
 			FeatureUtils.addAttribute(options, itemElement, "description",
-					nearbyObject.getDescription());
-			FeatureUtils.addElement(options, itemElement, "title",
-					nearbyObject.getTitle());
-			FeatureUtils.addElement(options, itemElement, "channel-type", 
-					nearbyObject.getChannelType());
-
-			Element geoElement = FeatureUtils.addNamespaceElement(
-					options, itemElement, "geoloc", Geolocation.NAMESPACE);
+					channelObject.getDescription());
 			
-			GeolocationUtils.appendGeoLocation(geoElement, nearbyObject.getGeolocation());
+			if (channelObject.getCreationDate() != null) {
+				FeatureUtils.addAttribute(options, itemElement, "created",
+						DATE_FORMAT.format(channelObject.getCreationDate()));
+			}
+			
+			FeatureUtils.addElement(options, itemElement, "title",
+					channelObject.getTitle());
+			FeatureUtils.addElement(options, itemElement, "channel_type", 
+					channelObject.getChannelType());
+
+			
+			if (channelObject.getGeolocation() != null) {
+				Element geoElement = FeatureUtils.addNamespaceElement(
+						options, itemElement, "geoloc", Geolocation.NAMESPACE);
+				GeolocationUtils.appendGeoLocation(geoElement, channelObject.getGeolocation());
+			}
+			
 		}
 		
 		RSMUtils.appendRSMElement(queryElement, rsm);

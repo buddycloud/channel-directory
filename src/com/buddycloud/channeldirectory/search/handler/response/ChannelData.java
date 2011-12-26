@@ -15,6 +15,8 @@
  */
 package com.buddycloud.channeldirectory.search.handler.response;
 
+import java.util.Date;
+
 
 /**
  * Represents a XMPP channel (identified by its jid) 
@@ -41,6 +43,7 @@ public class ChannelData extends ContentData {
 	private Geolocation geolocation;
 	private String channelType;
 	private String description;
+	private Date creationDate;
 	
 	public void setGeolocation(Geolocation geolocation) {
 		this.geolocation = geolocation;
@@ -72,6 +75,14 @@ public class ChannelData extends ContentData {
 
 	public String getDescription() {
 		return description;
+	}
+
+	public Date getCreationDate() {
+		return creationDate;
+	}
+
+	public void setCreationDate(Date creationDate) {
+		this.creationDate = creationDate;
 	}
 
 }

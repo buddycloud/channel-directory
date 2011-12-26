@@ -17,6 +17,7 @@ package com.buddycloud.channeldirectory.search.handler.metadata;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -114,8 +115,12 @@ public class MetadataQueryHandler extends ChannelQueryHandler {
 					Double.parseDouble(latLonSplit[1])));
 		}
 		
+		channelData.setCreationDate((Date) solrDocument.getFieldValue("creation-date"));
+		channelData.setChannelType((String) solrDocument.getFieldValue("channel-type"));
 		channelData.setId((String) solrDocument.getFieldValue("jid"));
 		channelData.setTitle((String) solrDocument.getFieldValue("title"));
+		channelData.setDescription((String) solrDocument.getFieldValue("description"));
+		
 		return channelData;
 	}
 }

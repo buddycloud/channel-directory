@@ -129,14 +129,13 @@ public class ContentQueryHandler extends PostQueryHandler {
 		
 		postData.setId((String) solrDocument.getFieldValue("id"));
 		postData.setAuthor((String) solrDocument.getFieldValue("author"));
-		postData.setAffiliation((String) solrDocument.getFieldValue("affiliation"));
 		postData.setContent((String) solrDocument.getFieldValue("content"));
 		postData.setServerId((String) solrDocument.getFieldValue("server_id"));
-		postData.setLeafNodeName((String) solrDocument.getFieldValue("leafnode_name"));
-		postData.setLeafNodeId((String) solrDocument.getFieldValue("leafnode_id"));
-		postData.setMessageId((String) solrDocument.getFieldValue("message_id"));
+		postData.setParentSimpleId((String) solrDocument.getFieldValue("parent_simpleid"));
+		postData.setParentFullId((String) solrDocument.getFieldValue("parent_fullid"));
 		postData.setInReplyTo((String) solrDocument.getFieldValue("inreplyto"));
 		postData.setUpdated((Date) solrDocument.getFieldValue("updated"));
+		postData.setPublished((Date) solrDocument.getFieldValue("published"));
 		
 		return postData;
 	}

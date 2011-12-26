@@ -84,9 +84,15 @@ public abstract class PostQueryHandler extends AbstractQueryHandler {
 						DATE_FORMAT.format(postObject.getUpdated()));
 			}
 			
-			String fullId = postObject.getLeafNodeName() + ":"
-					+ postObject.getMessageId();
-			FeatureUtils.addElement(options, entryElement, "id", fullId);
+			if (postObject.getPublished() != null) {
+				FeatureUtils.addElement(options, entryElement, "published", 
+						DATE_FORMAT.format(postObject.getPublished()));
+			}
+			
+			FeatureUtils.addElement(options, entryElement, "parent_fullid", 
+					postObject.getParentFullId());
+			FeatureUtils.addElement(options, entryElement, "parent_simpleid", 
+					postObject.getParentSimpleId());
 			
 			Element geoElement = FeatureUtils.addNamespaceElement(
 					options, entryElement, "geoloc", Geolocation.NAMESPACE);
@@ -94,7 +100,7 @@ public abstract class PostQueryHandler extends AbstractQueryHandler {
 					postObject.getGeolocation());
 			
 			Element inReplyEl = FeatureUtils.addNamespaceElement(
-					options, entryElement, "thr:in-reply-to", THREAD_NAMESPACE);
+					options, entryElement, "in-reply-to", THREAD_NAMESPACE);
 			if (inReplyEl != null) {
 				inReplyEl.addAttribute("ref", postObject.getInReplyTo());
 			}
