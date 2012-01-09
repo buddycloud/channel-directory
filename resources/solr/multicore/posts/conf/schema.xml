@@ -142,7 +142,6 @@
  
  <copyField source="parent_simpleid" dest="text"/>
  <copyField source="parent_fullid" dest="text"/>
- <copyField source="message_id" dest="text"/>
  
  <copyField source="inreplyto" dest="text"/>
 

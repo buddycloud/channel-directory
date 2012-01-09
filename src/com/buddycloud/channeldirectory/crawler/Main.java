@@ -88,14 +88,16 @@ public class Main {
 	}
 
 	private static XMPPConnection createConnection(Properties configuration)
-			throws XMPPException {
+			throws Exception {
 		
-		String serverName = configuration.getProperty("crawler.xmpp.servername");
+		String serviceName = configuration.getProperty("crawler.xmpp.servicename");
+		String host = configuration.getProperty("crawler.xmpp.host");
 		String userName = configuration.getProperty("crawler.xmpp.username");
 		
 		ConnectionConfiguration cc = new ConnectionConfiguration(
-				serverName,
-				Integer.parseInt(configuration.getProperty("crawler.xmpp.port")));
+				host,
+				Integer.parseInt(configuration.getProperty("crawler.xmpp.port")),
+				serviceName);
 		
 		XMPPConnection connection = new XMPPConnection(cc);
 		connection.connect();
