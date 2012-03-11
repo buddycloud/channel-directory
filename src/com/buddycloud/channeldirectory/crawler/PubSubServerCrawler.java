@@ -64,7 +64,7 @@ public class PubSubServerCrawler {
 		this.listener = listener;
 	}
 	
-	public void start() throws XMPPException {
+	public void start() {
 		
 		List<NodeCrawler> nodeCrawlers = new LinkedList<NodeCrawler>();
 		nodeCrawlers.add(new MetaDataCrawler(configuration, dataSource));
@@ -75,7 +75,6 @@ public class PubSubServerCrawler {
 			insertServers();
 		} catch (SQLException e1) {
 			LOGGER.error(e1);
-			throw new XMPPException(e1);
 		}
 		
 		String crawlIntervalStr = configuration.getProperty("crawler.crawlinterval");
@@ -86,69 +85,77 @@ public class PubSubServerCrawler {
 		
 		while (true) {
 			
-			List<String> serversToCrawl = new LinkedList<String>();
 			try {
-				serversToCrawl = retrieveServers();
-			} catch (SQLException e1) {
-				LOGGER.error(e1);
+				fetch(nodeCrawlers);
+				LOGGER.debug("Fetched all nodes, going to sleep.");
+			} catch (Exception e) {
+				LOGGER.error("Error while fetching nodes, going to sleep.", e);
 			}
-			
-			for (String server : serversToCrawl) {
-				PubSubManager manager = managers.getPubSubManager(server);
-				DiscoverItems discoverInfo = null;
-				try {
-					discoverInfo = manager.discoverNodes(null);
-				} catch (Exception e) {
-					LOGGER.warn("Could not fetch nodes from server [" + server + "]", e);
-					continue;
-				}
-				
-				try {
-					Node firehoseNode = manager.getNode("firehose");
-					listener.listen(firehoseNode, server);
-				} catch (Exception e) {
-					LOGGER.warn("Could not subscribe to firehose node from server [" + server + "]", e);
-				}
-				
-				if (discoverInfo == null) {
-					continue;
-				}
-				
-				List<Item> items = fetchItems(discoverInfo, managers.getConnection());
-				
-				for (Item item : items) {
-					Node node = null;
-					try {
-						node = manager.getNode(item.getNode());
-					} catch (Exception e) {
-						LOGGER.warn("Could not read node [" + item.getNode() + "] " +
-								"from server [" + server + "]", e);
-						continue;
-					}
-					
-					insertNode(node, server);
-					
-					for (NodeCrawler nodeCrawler : nodeCrawlers) {
-						try {
-							if (nodeCrawler.accept(node)) {
-								nodeCrawler.crawl(node, server);
-							}
-						} catch (Exception e) {
-							LOGGER.warn("Could not crawl node [" + item.getNode() + "] " +
-									"from server [" + server + "]", e);
-						}
-					}
-				}
-				
-			}
-			
-			LOGGER.debug("Fetched all nodes, going to sleep");
 			
 			try {
 				Thread.sleep(crawlInterval);
 			} catch (InterruptedException e) {
 				LOGGER.error(e);
 			}
+			
+		}
+	}
+
+	private void fetch(List<NodeCrawler> nodeCrawlers) throws XMPPException {
+		List<String> serversToCrawl = new LinkedList<String>();
+		try {
+			serversToCrawl = retrieveServers();
+		} catch (SQLException e1) {
+			LOGGER.error(e1);
+		}
+		
+		for (String server : serversToCrawl) {
+			PubSubManager manager = managers.getPubSubManager(server);
+			DiscoverItems discoverInfo = null;
+			try {
+				discoverInfo = manager.discoverNodes(null);
+			} catch (Exception e) {
+				LOGGER.warn("Could not fetch nodes from server [" + server + "]", e);
+				continue;
+			}
+			
+			try {
+				Node firehoseNode = manager.getNode("firehose");
+				listener.listen(firehoseNode, server);
+			} catch (Exception e) {
+				LOGGER.warn("Could not subscribe to firehose node from server [" + server + "]", e);
+			}
+			
+			if (discoverInfo == null) {
+				continue;
+			}
+			
+			List<Item> items = fetchItems(discoverInfo, managers.getConnection());
+			
+			for (Item item : items) {
+				Node node = null;
+				try {
+					node = manager.getNode(item.getNode());
+				} catch (Exception e) {
+					LOGGER.warn("Could not read node [" + item.getNode() + "] " +
+							"from server [" + server + "]", e);
+					continue;
+				}
+				
+				insertNode(node, server);
+				
+				for (NodeCrawler nodeCrawler : nodeCrawlers) {
+					try {
+						if (nodeCrawler.accept(node)) {
+							nodeCrawler.crawl(node, server);
+						}
+					} catch (Exception e) {
+						LOGGER.warn("Could not crawl node [" + item.getNode() + "] " +
+								"from server [" + server + "]", e);
+					}
+				}
+			}
+			
 		}
 	}
 	
