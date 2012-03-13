@@ -15,17 +15,26 @@
  */
 package com.buddycloud.channeldirectory.crawler.node;
 
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.IQ.Type;
+import org.jivesoftware.smack.provider.ProviderManager;
+import org.jivesoftware.smackx.packet.RSMSet;
+import org.jivesoftware.smackx.pubsub.Affiliation;
+import org.jivesoftware.smackx.pubsub.AffiliationsExtension;
 import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.Subscription;
+import org.jivesoftware.smackx.pubsub.NodeExtension;
+import org.jivesoftware.smackx.pubsub.PubSubElementType;
+import org.jivesoftware.smackx.pubsub.packet.PubSub;
+import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 
@@ -42,6 +51,16 @@ public class FollowerCrawler implements NodeCrawler {
 	
 	public FollowerCrawler(ChannelDirectoryDataSource dataSource) {
 		this.dataSource = dataSource;
+		
+		Object affiliationsProvider = ProviderManager.getInstance().getExtensionProvider(
+				PubSubElementType.AFFILIATIONS.getElementName(), PubSubNamespace.BASIC.getXmlns());
+		ProviderManager.getInstance().addExtensionProvider(PubSubElementType.AFFILIATIONS.getElementName(), 
+				PubSubNamespace.OWNER.getXmlns(), affiliationsProvider);
+		
+		Object affiliationProvider = ProviderManager.getInstance().getExtensionProvider(
+				"affiliation", PubSubNamespace.BASIC.getXmlns());
+		ProviderManager.getInstance().addExtensionProvider("affiliation", 
+				PubSubNamespace.OWNER.getXmlns(), affiliationProvider);
 	}
 
 	/* (non-Javadoc)
@@ -49,31 +68,34 @@ public class FollowerCrawler implements NodeCrawler {
 	 */
 	@Override
 	public void crawl(Node node, String server) throws Exception {
-		List<Subscription> subscriptions = node.getSubscriptions();
+		List<Affiliation> affiliations = getAffiliations(node);
 		
 		String item = node.getId();
+		String itemJID = CrawlerHelper.getNodeId(item);
 		
-		for (Subscription subscription : subscriptions) {
+		if (itemJID == null) {
+			return;
+		}
 		
-			String user = subscription.getJid();
+		for (Affiliation affiliation : affiliations) {
+		
+			String user = affiliation.getNodeId();
 			
-			enqueueNewServer(user);
+			CrawlerHelper.enqueueNewServer(user, dataSource);
 			
-			Connection connection = dataSource.getConnection();
+			Long userId = fetchRowId(user, "t_user");
+			Long itemId = fetchRowId(itemJID, "item");
 			
-			Long userId = fetchRowId(user, "t_user", connection);
-			Long itemId = fetchRowId(item, "item", connection);
-			
-			Statement selectTasteSt = connection.createStatement();
+			Statement selectTasteSt = dataSource.createStatement();
 			ResultSet selectTasteResult = selectTasteSt.executeQuery(
 					"SELECT * FROM taste_preferences WHERE user_id = '" + userId + "' " +
 					"AND item_id = '" + itemId + "'");
 			
 			if (!selectTasteResult.next()) {
-				Statement insertTasteSt = connection.createStatement();
+				Statement insertTasteSt = dataSource.createStatement();
 				insertTasteSt.execute("INSERT INTO taste_preferences(user_id, item_id) " +
 						"VALUES ('" + userId + "', '" + itemId + "')");
-				insertTasteSt.close();
+				ChannelDirectoryDataSource.close(insertTasteSt);
 			}
 			
 			ChannelDirectoryDataSource.close(selectTasteSt);
@@ -87,26 +109,6 @@ public class FollowerCrawler implements NodeCrawler {
 		
 	}
 
-	/**
-	 * @param user
-	 * @throws SQLException 
-	 */
-	private void enqueueNewServer(String user) throws SQLException {
-		String server = user.substring(user.indexOf('@'));
-		
-		PreparedStatement statement = dataSource.prepareStatement(
-				"INSERT INTO subscribed_server(name) values (?)", 
-				server);
-		
-		try {
-			statement.execute();
-		} catch (SQLException e) {
-			LOGGER.warn("Server already inserted " + server);
-		} finally {
-			ChannelDirectoryDataSource.close(statement);
-		}
-	}
-
 	private void updateSubscribedNode(String nodeName, String server) throws SQLException {
 		
 		PreparedStatement prepareStatement = dataSource.prepareStatement(
@@ -116,10 +118,10 @@ public class FollowerCrawler implements NodeCrawler {
 		ChannelDirectoryDataSource.close(prepareStatement);
 	}
 	
-	private static Long fetchRowId(String user, String tableName, Connection connection)
+	private Long fetchRowId(String user, String tableName)
 			throws SQLException {
 		
-		Statement selectRowSt = connection.createStatement();
+		Statement selectRowSt = dataSource.createStatement();
 		ResultSet selectRowResult = selectRowSt.executeQuery(
 				"SELECT id FROM " + tableName + " WHERE jid = '" + user + "'");
 		Long userId = null;
@@ -127,7 +129,7 @@ public class FollowerCrawler implements NodeCrawler {
 		if (selectRowResult.next()) {
 			userId = selectRowResult.getLong("id");
 		} else {
-			Statement insertRowSt = connection.createStatement();
+			Statement insertRowSt = dataSource.createStatement();
 			insertRowSt.execute("INSERT INTO " + tableName + "(jid) VALUES ('" + user + "') RETURNING id");
 			
 			ResultSet insertUserResult = insertRowSt.getResultSet();
@@ -147,7 +149,38 @@ public class FollowerCrawler implements NodeCrawler {
 	 */
 	@Override
 	public boolean accept(Node node) {
-		return node.getId().endsWith("/subscriptions");
+		return node.getId().endsWith("/posts");
 	}
-
+	
+	private List<Affiliation> getAffiliations(Node node) throws XMPPException {
+		
+		List<Affiliation> affiliations = new LinkedList<Affiliation>();
+		
+		PubSub request = node.createPubsubPacket(Type.GET, 
+				new NodeExtension(PubSubElementType.AFFILIATIONS, node.getId()), 
+				PubSubNamespace.OWNER);
+		
+		while (true) {
+			
+			PubSub reply = (PubSub) node.sendPubsubPacket(Type.GET, request);
+			
+			AffiliationsExtension subElem = (AffiliationsExtension) reply.getExtension(
+					PubSubElementType.AFFILIATIONS.getElementName(), PubSubNamespace.BASIC.getXmlns());
+			
+			affiliations.addAll(subElem.getAffiliations());
+			
+			if (reply.getRsmSet() == null || 
+					affiliations.size() == reply.getRsmSet().getCount()) {
+				break;
+			}
+			
+			RSMSet rsmSet = new RSMSet();
+			rsmSet.setAfter(reply.getRsmSet().getLast());
+			request.setRsmSet(rsmSet);
+			
+		}
+		
+		return affiliations;
+	}
+	
 }

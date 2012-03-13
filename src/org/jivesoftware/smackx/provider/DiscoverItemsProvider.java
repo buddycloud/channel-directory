@@ -20,13 +20,11 @@
 
 package org.jivesoftware.smackx.provider;
 
-import java.io.IOException;
-
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.provider.IQProvider;
-import org.jivesoftware.smackx.packet.*;
+import org.jivesoftware.smackx.packet.DiscoverItems;
+import org.jivesoftware.smackx.packet.RSMSet;
 import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 /**
 * The DiscoverInfoProvider parses Service Discovery items packets.
@@ -63,7 +61,7 @@ public class DiscoverItemsProvider implements IQProvider {
                 item.setAction(action);
                 discoverItems.addItem(item);
             } else if (eventType == XmlPullParser.START_TAG && "set".equals(parser.getName())) {
-            	RSMSet rsmSet = parseRSM(parser);
+            	RSMSet rsmSet = RSMSet.parse(parser);
             	discoverItems.setRsmSet(rsmSet);
             } 
             else if (eventType == XmlPullParser.END_TAG && "query".equals(parser.getName())) {
@@ -74,47 +72,4 @@ public class DiscoverItemsProvider implements IQProvider {
         return discoverItems;
     }
 
-	private RSMSet parseRSM(XmlPullParser parser)
-			throws XmlPullParserException, IOException {
-		RSMSet rsmSet = new RSMSet();
-		
-		boolean readingFirst = false;
-		boolean readingLast = false;
-		boolean readingCount = false;
-		
-		while (true) {
-			int eventType = parser.next();
-			
-			if (eventType == XmlPullParser.END_TAG && "set".equals(parser.getName())) {
-				break;
-			} else if (eventType == XmlPullParser.START_TAG) {
-				if ("first".equals(parser.getName())) {
-					rsmSet.setIndex(Integer.parseInt(parser.getAttributeValue("", "index")));
-					readingFirst = true;
-				} else if ("last".equals(parser.getName())) {
-					readingLast = true;
-				} else if ("count".equals(parser.getName())) {
-					readingCount = true;
-				}
-			} else if (eventType == XmlPullParser.END_TAG) {
-				if ("first".equals(parser.getName())) {
-					readingFirst = false;
-				} else if ("last".equals(parser.getName())) {
-					readingLast = false;
-				} else if ("count".equals(parser.getName())) {
-					readingCount = false;
-				}
-			} else if (eventType == XmlPullParser.TEXT) {
-				if (readingFirst) {
-					rsmSet.setFirst(parser.getText());
-				} else if (readingLast) {
-					rsmSet.setLast(parser.getText());
-				} else if (readingCount) {
-					rsmSet.setCount(Integer.parseInt(parser.getText()));
-				}
-			}
-			
-		}
-		return rsmSet;
-	}
 }

@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
 import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smackx.packet.DiscoverItems;
-import org.jivesoftware.smackx.packet.RSMSet;
 import org.jivesoftware.smackx.packet.DiscoverItems.Item;
+import org.jivesoftware.smackx.packet.RSMSet;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.jivesoftware.smackx.pubsub.packet.SyncPacketSend;
@@ -56,6 +56,8 @@ public class PubSubServerCrawler {
 	private final PubSubSubscriptionListener listener;
 	private final ChannelDirectoryDataSource dataSource;
 	
+	private List<NodeCrawler> nodeCrawlers;
+	
 	public PubSubServerCrawler(Properties configuration, PubSubManagers managers, 
 			ChannelDirectoryDataSource dataSource, PubSubSubscriptionListener listener) {
 		this.configuration = configuration;
@@ -66,7 +68,7 @@ public class PubSubServerCrawler {
 	
 	public void start() {
 		
-		List<NodeCrawler> nodeCrawlers = new LinkedList<NodeCrawler>();
+		this.nodeCrawlers = new LinkedList<NodeCrawler>();
 		nodeCrawlers.add(new MetaDataCrawler(configuration, dataSource));
 		nodeCrawlers.add(new PostCrawler(configuration));
 		nodeCrawlers.add(new FollowerCrawler(dataSource));
@@ -110,6 +112,7 @@ public class PubSubServerCrawler {
 		}
 		
 		for (String server : serversToCrawl) {
+			
 			PubSubManager manager = managers.getPubSubManager(server);
 			DiscoverItems discoverInfo = null;
 			try {
@@ -130,53 +133,73 @@ public class PubSubServerCrawler {
 				continue;
 			}
 			
-			List<Item> items = fetchItems(discoverInfo, managers.getConnection());
-			
-			for (Item item : items) {
-				Node node = null;
-				try {
-					node = manager.getNode(item.getNode());
-				} catch (Exception e) {
-					LOGGER.warn("Could not read node [" + item.getNode() + "] " +
-							"from server [" + server + "]", e);
-					continue;
-				}
-				
-				insertNode(node, server);
-				
-				for (NodeCrawler nodeCrawler : nodeCrawlers) {
-					try {
-						if (nodeCrawler.accept(node)) {
-							nodeCrawler.crawl(node, server);
-						}
-					} catch (Exception e) {
-						LOGGER.warn("Could not crawl node [" + item.getNode() + "] " +
-								"from server [" + server + "]", e);
-					}
-				}
+			try {
+				fetchAndCrawl(discoverInfo, server, manager);
+			} catch (Exception e) {
+				LOGGER.warn("Could not crawls nodes from server [" + server + "]", e);
 			}
 			
+		}
+	}
+
+	private void crawl(List<NodeCrawler> nodeCrawlers, String server,
+			PubSubManager manager, Item item) {
+			
+		Node node = null;
+		
+		try {
+			node = manager.getNode(item.getNode());
+		} catch (Exception e) {
+			LOGGER.warn("Could not read node [" + item.getNode() + "] "
+					+ "from server [" + server + "]", e);
+			return;
+		}
+
+		try {
+			insertNode(node, server);
+		} catch (Exception e) {
+			LOGGER.warn("Could not insert node [" + item.getNode() + "] "
+					+ "from server [" + server + "]", e);
+		}
+
+		for (NodeCrawler nodeCrawler : nodeCrawlers) {
+			try {
+				if (nodeCrawler.accept(node)) {
+					nodeCrawler.crawl(node, server);
+				}
+			} catch (Exception e) {
+				LOGGER.warn("Could not crawl node [" + item.getNode() + "] "
+						+ "from server [" + server + "]", e);
+			}
 		}
 	}
 	
 	/**
 	 * @param discoverInfo
 	 * @param connection 
+	 * @param server 
+	 * @param manager 
 	 * @return
 	 * @throws XMPPException 
 	 */
-	private List<Item> fetchItems(DiscoverItems discoverInfo, Connection connection) throws XMPPException {
-		LinkedList<Item> items = new LinkedList<DiscoverItems.Item>();
+	private void fetchAndCrawl(DiscoverItems discoverInfo, 
+			String server, PubSubManager manager) throws XMPPException {
+		
+		int itemCount = 0;
+		
+		Connection connection = managers.getConnection();
 		
 		while (true) {
+			
 			Iterator<Item> itemIterator = discoverInfo.getItems();
 			
 			while (itemIterator.hasNext()) {
-				items.add(itemIterator.next());
+				crawl(nodeCrawlers, server, manager, itemIterator.next());
+				itemCount++;
 			}
 			
 			if (discoverInfo.getRsmSet() == null || 
-					items.size() == discoverInfo.getRsmSet().getCount()) {
+					itemCount == discoverInfo.getRsmSet().getCount()) {
 				break;
 			}
 			
@@ -190,7 +213,6 @@ public class PubSubServerCrawler {
 			discoverInfo = (DiscoverItems) SyncPacketSend.getReply(connection, request);
 		}
 		
-		return items;
 	}
 
 	/**

@@ -25,6 +25,7 @@ import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.xmpp.component.AbstractComponent;
 import org.xmpp.packet.IQ;
+import org.xmpp.packet.Packet;
 
 import com.buddycloud.channeldirectory.search.handler.QueryHandler;
 import com.buddycloud.channeldirectory.search.handler.common.mahout.ChannelRecommender;
@@ -70,8 +71,20 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 		createHandlers();
 	}
 
+	/* (non-Javadoc)
+	 * @see org.xmpp.component.AbstractComponent#send(org.xmpp.packet.Packet)
+	 */
+	@Override
+	protected void send(Packet arg0) {
+		LOGGER.debug("S: " + arg0.toXML());
+		super.send(arg0);
+	}
+	
 	@Override
 	protected IQ handleIQGet(IQ iq) throws Exception {
+		
+		LOGGER.debug("R: " + iq.toXML());
+		
 		Element queryElement = iq.getElement().element("query");
 		if (queryElement == null) {
 			return XMPPUtils.error(iq, "IQ does not contain query element.", 

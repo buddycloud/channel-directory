@@ -72,7 +72,7 @@ public class RecommendationQueryHandler extends ChannelQueryHandler {
 			recommendedChannels = findRecommendedChannels(userJid, rsm);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
-					getLogger());
+					e, getLogger());
 		}
 		
 		return createIQResponse(iq, recommendedChannels, rsm);

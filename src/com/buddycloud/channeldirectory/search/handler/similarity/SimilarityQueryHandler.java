@@ -71,8 +71,9 @@ public class SimilarityQueryHandler extends ChannelQueryHandler {
 		try {
 			recommendedChannels = findSimilarChannels(channelJid, rsm);
 		} catch (Exception e) {
-			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
-					getLogger());
+			return XMPPUtils.error(iq, 
+					"Search could not be performed, service is unavailable.", 
+					e, getLogger());
 		}
 		
 		return createIQResponse(iq, recommendedChannels, rsm);

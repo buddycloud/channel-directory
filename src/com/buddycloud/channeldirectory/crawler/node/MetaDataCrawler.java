@@ -71,13 +71,12 @@ public class MetaDataCrawler implements NodeCrawler {
 	public void crawl(Node node, String server) throws XMPPException {
 		
 		String nodeFullJid = node.getId();
-		String[] nodeFullJidSplitted = nodeFullJid.split("/");
-		
-		if (nodeFullJidSplitted.length < 4) {
+		String nodeId = CrawlerHelper.getNodeId(nodeFullJid);
+		if (nodeId == null) {
 			return;
 		}
 		
-		String nodeId = nodeFullJidSplitted[2];
+		CrawlerHelper.enqueueNewServer(nodeId, dataSource);
 		
 		LeafNode leaf = (LeafNode) node;
 		DiscoverInfo discoverInfo = leaf.discoverInfo();

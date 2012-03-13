@@ -39,6 +39,18 @@ public class XMPPUtils {
 	}
 	
 	/**
+	 * @param iq
+	 * @param errorMessage
+	 * @param logger
+	 * @return
+	 */
+	public static IQ error(IQ iq, String errorMessage, Exception e, Logger logger) {
+		logger.error(errorMessage, e);
+		return XMPPUtils.createErrorResponse(iq, errorMessage, 
+				Condition.bad_request, Type.modify);
+	}
+	
+	/**
 	 * Logs the RSM page not found error and returns an IQ error response
 	 * 
 	 * @param iq

@@ -46,7 +46,7 @@ public class Main {
 		ExternalComponentManager componentManager = new ExternalComponentManager(
 				configuration.getProperty("xmpp.host"),
 				Integer.valueOf(configuration.getProperty("xmpp.port")));
-	
+		
 		String subdomain = configuration.getProperty("xmpp.subdomain");
 		componentManager.setSecretKey(subdomain, 
 				configuration.getProperty("xmpp.secretkey"));

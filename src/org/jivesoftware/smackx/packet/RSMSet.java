@@ -15,6 +15,11 @@
  */
 package org.jivesoftware.smackx.packet;
 
+import java.io.IOException;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 /**
  * @author Abmar
  *
@@ -27,6 +32,7 @@ public class RSMSet {
 	private String first;
 	private String last;
 	private Integer count;
+	private Integer max;
 	
 	private String before;
 	private String after;
@@ -90,6 +96,10 @@ public class RSMSet {
 			builder.append("<first index='").append(index).append("'>").append(first).append("</first>");
 		}
 		
+		if (max != null) {
+			builder.append("<max>").append(max).append("</max>");
+		}
+		
 		if (last != null) {
 			builder.append("<last>").append(last).append("</last>");
 		}
@@ -110,17 +120,73 @@ public class RSMSet {
 		
 		return builder.toString();
 	}
+
 	public String getBefore() {
 		return before;
 	}
+
 	public void setBefore(String before) {
 		this.before = before;
 	}
+
 	public String getAfter() {
 		return after;
 	}
+
 	public void setAfter(String after) {
 		this.after = after;
+	}
+
+	public Integer getMax() {
+		return max;
+	}
+
+	public void setMax(Integer max) {
+		this.max = max;
+	}
+	
+	public static RSMSet parse(XmlPullParser parser)
+			throws XmlPullParserException, IOException {
+		RSMSet rsmSet = new RSMSet();
+		
+		boolean readingFirst = false;
+		boolean readingLast = false;
+		boolean readingCount = false;
+		
+		while (true) {
+			int eventType = parser.next();
+			
+			if (eventType == XmlPullParser.END_TAG && "set".equals(parser.getName())) {
+				break;
+			} else if (eventType == XmlPullParser.START_TAG) {
+				if ("first".equals(parser.getName())) {
+					rsmSet.setIndex(Integer.parseInt(parser.getAttributeValue("", "index")));
+					readingFirst = true;
+				} else if ("last".equals(parser.getName())) {
+					readingLast = true;
+				} else if ("count".equals(parser.getName())) {
+					readingCount = true;
+				}
+			} else if (eventType == XmlPullParser.END_TAG) {
+				if ("first".equals(parser.getName())) {
+					readingFirst = false;
+				} else if ("last".equals(parser.getName())) {
+					readingLast = false;
+				} else if ("count".equals(parser.getName())) {
+					readingCount = false;
+				}
+			} else if (eventType == XmlPullParser.TEXT) {
+				if (readingFirst) {
+					rsmSet.setFirst(parser.getText());
+				} else if (readingLast) {
+					rsmSet.setLast(parser.getText());
+				} else if (readingCount) {
+					rsmSet.setCount(Integer.parseInt(parser.getText()));
+				}
+			}
+			
+		}
+		return rsmSet;
 	}
 	
 }
