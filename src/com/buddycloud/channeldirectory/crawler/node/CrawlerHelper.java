@@ -16,9 +16,11 @@
 package com.buddycloud.channeldirectory.crawler.node;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
+import org.jivesoftware.smackx.pubsub.Node;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 
@@ -37,21 +39,8 @@ public class CrawlerHelper {
 			ChannelDirectoryDataSource dataSource) {
 		
 		String server = user.substring(user.indexOf('@') + 1);
+		insertServer(server, dataSource);
 		
-		PreparedStatement statement = null;
-		
-		try {
-			statement = dataSource.prepareStatement(
-					"INSERT INTO subscribed_server(name) values (?)", 
-					server);
-			statement.execute();
-		} catch (SQLException e) {
-			LOGGER.warn("Server already inserted " + server);
-		} finally {
-			if (statement != null) {
-				ChannelDirectoryDataSource.close(statement);
-			}
-		}
 	}
 
 	public static String getNodeId(String nodeFullJid) {
@@ -63,6 +52,86 @@ public class CrawlerHelper {
 		
 		String nodeId = nodeFullJidSplitted[2];
 		return nodeId;
+	}
+
+	public static void insertServer(String server, ChannelDirectoryDataSource dataSource) {
+		
+		if (CrawlerHelper.isServerSubscribed(server, dataSource)) {
+			return;
+		}
+		
+		PreparedStatement statement = null;
+		
+		try {
+			statement = dataSource.prepareStatement(
+					"INSERT INTO subscribed_server(name) values (?)", 
+					server);
+			statement.execute();
+		} catch (SQLException e) {
+			LOGGER.error("Could not insert server " + server, e);
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
+	}
+
+	private static boolean isServerSubscribed(String server, ChannelDirectoryDataSource dataSource) {
+		
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"SELECT * FROM subscribed_server WHERE name = ?", 
+					server);
+			ResultSet resultSet = statement.executeQuery();
+			
+			return resultSet.next();
+			
+		} catch (SQLException e1) {
+			LOGGER.error(e1);
+			return false;
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
+		
+	}
+	
+public static void insertNode(Node node, String server, ChannelDirectoryDataSource dataSource) {
+		
+		if (isNodeSubscribed(node, server, dataSource)) {
+			return;
+		}
+		
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"INSERT INTO subscribed_node(name, server) values (?, ?)", 
+					node.getId(), server);
+			statement.execute();
+		} catch (SQLException e1) {
+			LOGGER.error("Could not insert node " + node + " " + server, e1);
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
+		
+	}
+	
+	private static boolean isNodeSubscribed(Node node, String server, ChannelDirectoryDataSource dataSource) {
+		
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"SELECT * FROM subscribed_node WHERE name = ? AND server = ?", 
+					node.getId(), server);
+			ResultSet resultSet = statement.executeQuery();
+			
+			return resultSet.next();
+			
+		} catch (SQLException e1) {
+			LOGGER.error(e1);
+			return false;
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
+		
 	}
 
 }

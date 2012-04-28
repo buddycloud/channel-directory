@@ -15,7 +15,6 @@
  */
 package com.buddycloud.channeldirectory.crawler;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -35,6 +34,7 @@ import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.jivesoftware.smackx.pubsub.packet.SyncPacketSend;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
+import com.buddycloud.channeldirectory.crawler.node.CrawlerHelper;
 import com.buddycloud.channeldirectory.crawler.node.FollowerCrawler;
 import com.buddycloud.channeldirectory.crawler.node.MetaDataCrawler;
 import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
@@ -155,12 +155,7 @@ public class PubSubServerCrawler {
 			return;
 		}
 
-		try {
-			insertNode(node, server);
-		} catch (Exception e) {
-			LOGGER.warn("Could not insert node [" + item.getNode() + "] "
-					+ "from server [" + server + "]", e);
-		}
+		CrawlerHelper.insertNode(node, server, dataSource);
 
 		for (NodeCrawler nodeCrawler : nodeCrawlers) {
 			try {
@@ -244,45 +239,9 @@ public class PubSubServerCrawler {
 		String[] serversToCrawl = serversToCrawlStr.split(";");
 		
 		for (String server : serversToCrawl) {
-			
-			PreparedStatement statement = dataSource.prepareStatement(
-					"INSERT INTO subscribed_server(name) values (?)", 
-					server);
-			
-			try {
-				statement.execute();
-			} catch (SQLException e) {
-				LOGGER.warn("Server already inserted " + server);
-			} finally {
-				ChannelDirectoryDataSource.close(statement);
-			}
+			CrawlerHelper.insertServer(server, dataSource);
 		}
 		
 	}
 
-	/**
-	 * @throws SQLException 
-	 * 
-	 */
-	private void insertNode(Node node, String server) {
-		
-		PreparedStatement statement = null;
-		try {
-			statement = dataSource.prepareStatement(
-					"INSERT INTO subscribed_node(name, server) values (?, ?)", 
-					node.getId(), server);
-		} catch (SQLException e1) {
-			LOGGER.warn("Could not insert node " + node + " " + server, e1);
-			return;
-		}
-		
-		try {
-			statement.execute();
-		} catch (SQLException e) {
-			LOGGER.warn("Node already subscribed " + node + " " + server);
-		} finally {
-			ChannelDirectoryDataSource.close(statement);
-		}
-	}
-	
 }

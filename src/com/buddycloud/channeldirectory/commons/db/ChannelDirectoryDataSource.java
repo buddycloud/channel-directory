@@ -54,6 +54,11 @@ public class ChannelDirectoryDataSource {
 	}
 	
 	public static void close(Statement statement) {
+		
+		if (statement == null) {
+			return;
+		}
+		
 		try {
 			Connection connection = statement.getConnection();
 			statement.close();

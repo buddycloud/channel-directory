@@ -62,20 +62,43 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 
 	@Override
 	public long toUserId(String userJid) {
+		
+		PreparedStatement statement = null;
+		
 		try {
 			Connection connection = dataSource.getConnection();
-			PreparedStatement selectUserSt = connection
+			statement = connection
 					.prepareStatement("SELECT id FROM t_user WHERE jid  = ?");
-			selectUserSt.setString(1, userJid);
+			statement.setString(1, userJid);
 
-			ResultSet resultSet = selectUserSt.executeQuery();
+			ResultSet resultSet = statement.executeQuery();
 			resultSet.next();
 
 			long userId = resultSet.getLong("id");
-			selectUserSt.close();
-			connection.close();
 			
 			return userId;
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		} finally {
+			close(statement);
+		}
+	}
+
+	/**
+	 * @param statement
+	 */
+	private void close(PreparedStatement statement) {
+		if (statement == null) {
+			return;
+		}
+		
+		try {
+			Connection connection = statement.getConnection();
+			statement.close();
+			if (connection != null) {
+				connection.close();
+			}
+			
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -83,55 +106,59 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 
 	@Override
 	public ChannelData toChannelData(long itemID) {
+		
+		PreparedStatement statement = null;
+		
 		try {
 			Connection connection = dataSource.getConnection();
 			
-			PreparedStatement selectItemSt = connection
+			statement = connection
 					.prepareStatement("SELECT jid, title, description FROM item WHERE id = ?");
 			
-			selectItemSt.setLong(1, itemID);
+			statement.setLong(1, itemID);
 			
-			ResultSet resultSet = selectItemSt.executeQuery();
+			ResultSet resultSet = statement.executeQuery();
 			resultSet.next();
 			
 			String jid = resultSet.getString("jid");
 			String title = resultSet.getString("title");
 			String desc = resultSet.getString("description");
 			
-			selectItemSt.close();
-			
 			ChannelData channelData = new ChannelData();
 			channelData.setId(jid);
 			channelData.setTitle(title);
 			channelData.setDescription(desc);
 			
-			connection.close();
-			
 			return channelData;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
+		} finally {
+			close(statement);
 		}
 	}
 
 	@Override
 	public long toChannelId(String channelJid) {
+		
+		PreparedStatement statement = null;
+		
 		try {
 			Connection connection = dataSource.getConnection();
 
-			PreparedStatement selectItemSt = connection
+			statement = connection
 					.prepareStatement("SELECT id FROM item WHERE jid  = ?");
-			selectItemSt.setString(1, channelJid);
+			statement.setString(1, channelJid);
 
-			ResultSet resultSet = selectItemSt.executeQuery();
+			ResultSet resultSet = statement.executeQuery();
 			resultSet.next();
 
 			long itemId = resultSet.getLong("id");
-			selectItemSt.close();
-			connection.close();
 
 			return itemId;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
+		} finally {
+			close(statement);
 		}
 	}
 
