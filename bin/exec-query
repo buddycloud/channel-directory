@@ -24,5 +24,4 @@
 BIN_DIR=`dirname $0`
 cd "$BIN_DIR"/..
 
-shift
 java -cp .:./*:./lib/* com.buddycloud.channeldirectory.cli.Main "$@"

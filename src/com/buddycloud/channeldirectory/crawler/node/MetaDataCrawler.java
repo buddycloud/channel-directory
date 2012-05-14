@@ -155,7 +155,7 @@ public class MetaDataCrawler implements NodeCrawler {
 		object.setField("title", channelData.getTitle());
 		object.setField("description", channelData.getDescription());
 		object.setField("creation-date", channelData.getCreationDate());
-		object.setField("channel-type", channelData.getType()); //topic or personal
+		object.setField("channel-type", channelData.getChannelType()); //topic or personal
 		
 		SolrServer solrServer = SolrServerFactory.createChannelCore(configuration);
 		solrServer.add(object);
