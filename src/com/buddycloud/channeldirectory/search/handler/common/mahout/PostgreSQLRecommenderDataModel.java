@@ -19,8 +19,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLBooleanPrefJDBCDataModel;
 import org.apache.mahout.cf.taste.impl.model.jdbc.ReloadFromJDBCDataModel;
@@ -37,6 +42,8 @@ import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
  */
 public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataModel {
 
+	private static final int REFRESH_DELAY = 30; // Minutes
+	
 	private ChannelDirectoryDataSource dataSource;
 	private DataModel dataModel;
 
@@ -44,6 +51,7 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 		try {
 			dataSource = new ChannelDirectoryDataSource(properties);
 			createDataModel();
+			scheduleRefreshAction();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -53,6 +61,16 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 		this.dataModel = new ReloadFromJDBCDataModel(
 				new PostgreSQLBooleanPrefJDBCDataModel(
 				dataSource.getDataSource()));
+	}
+
+	private void scheduleRefreshAction() {
+		ScheduledExecutorService scheduledThreadPool = Executors.newScheduledThreadPool(1);
+		scheduledThreadPool.scheduleWithFixedDelay(new Runnable() {
+			@Override
+			public void run() {
+				dataModel.refresh(new LinkedList<Refreshable>());
+			}
+		}, REFRESH_DELAY, REFRESH_DELAY, TimeUnit.MINUTES);
 	}
 
 	@Override
