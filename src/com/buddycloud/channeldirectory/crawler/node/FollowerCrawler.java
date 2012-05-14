@@ -73,6 +73,8 @@ public class FollowerCrawler implements NodeCrawler {
 		String item = node.getId();
 		String itemJID = CrawlerHelper.getNodeId(item);
 		
+		LOGGER.debug("Fetching followers for " + itemJID);
+		
 		if (itemJID == null) {
 			return;
 		}
@@ -91,7 +93,12 @@ public class FollowerCrawler implements NodeCrawler {
 					"SELECT * FROM taste_preferences WHERE user_id = '" + userId + "' " +
 					"AND item_id = '" + itemId + "'");
 			
-			if (!selectTasteResult.next()) {
+			boolean affiliationExists = selectTasteResult.next();
+			
+			LOGGER.debug(user + " follows " + itemJID + 
+					". Affiliation exists? " + affiliationExists);
+			
+			if (!affiliationExists) {
 				Statement insertTasteSt = dataSource.createStatement();
 				insertTasteSt.execute("INSERT INTO taste_preferences(user_id, item_id) " +
 						"VALUES ('" + userId + "', '" + itemId + "')");

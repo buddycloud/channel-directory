@@ -75,7 +75,7 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 			resultSet.next();
 
 			long userId = resultSet.getLong("id");
-			
+
 			return userId;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);

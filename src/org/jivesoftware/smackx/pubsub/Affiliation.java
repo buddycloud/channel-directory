@@ -33,7 +33,7 @@ public class Affiliation implements PacketExtension
 	
 	public enum Type
 	{
-		member, none, outcast, owner, publisher, moderator	
+		member, none, outcast, owner, publisher, moderator, followerPlus	
 	}
 
 	/**
