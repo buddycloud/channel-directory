@@ -15,6 +15,7 @@
  */
 package com.buddycloud.channeldirectory.cli;
 
+import java.io.FileReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -30,10 +31,11 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
-import com.buddycloud.channeldirectory.cli.query.PersonalChannelsCountQuery;
-import com.buddycloud.channeldirectory.cli.query.PostCountQuery;
-import com.buddycloud.channeldirectory.cli.query.Query;
 import com.buddycloud.channeldirectory.commons.ConfigurationUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  * @author Abmar
@@ -41,12 +43,27 @@ import com.buddycloud.channeldirectory.commons.ConfigurationUtils;
  */
 public class Main {
 
+	private static final String QUERIES_FILE = ConfigurationUtils.getChannelDirHome() 
+			+ "/queries.json";
+	
 	@SuppressWarnings("static-access")
 	public static void main(String[] args) throws Exception {
 		
+		JsonElement rootElement = new JsonParser().parse(new FileReader(QUERIES_FILE));
+		JsonArray rootArray = rootElement.getAsJsonArray();
+		
 		Map<String, Query> queries = new HashMap<String, Query>();
-		queries.put(PersonalChannelsCountQuery.NAME, new PersonalChannelsCountQuery());
-		queries.put(PostCountQuery.NAME, new PostCountQuery());
+		
+		for (int i = 0; i < rootArray.size(); i++) {
+			JsonObject queryElement = rootArray.get(i).getAsJsonObject();
+			String queryName = queryElement.get("name").getAsString();
+			
+			Query query = new Query(queryElement.get("agg").getAsString(), 
+					queryElement.get("core").getAsString(), 
+					queryElement.get("q").getAsString());
+			
+			queries.put(queryName, query);
+		}
 		
 		LinkedList<String> queriesNames = new LinkedList<String>(queries.keySet());
 		Collections.sort(queriesNames);

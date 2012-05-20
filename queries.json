@@ -1,0 +1,5 @@
+[
+	{name="personal-channels-count", agg="count", core="channels", q="channel-type:personal"},
+	{name="topic-channels-count", agg="count", core="channels", q="channel-type:topic"},
+	{name="post-count", agg="count", core="posts", q="content:[* TO *]"}
+]

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.buddycloud.channeldirectory.cli.query;
+package com.buddycloud.channeldirectory.cli;
 
 import java.util.Properties;
 
@@ -27,19 +27,37 @@ import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
  * @author Abmar
  *
  */
-public class PostCountQuery implements Query {
-	
-	public static final String NAME = "post-count";
-	
-	@Override
-	public String exec(String args, Properties configuration) throws Exception {
-		SolrServer solrServer = SolrServerFactory.createPostCore(configuration);
-		SolrQuery solrQuery = new SolrQuery("content:[* TO *]");
-		
-		QueryResponse queryResponse = solrServer.query(solrQuery);
-		Long numFound = queryResponse.getResults().getNumFound();
-		
-		return numFound.toString();
-	}
+public class Query {
 
+	private final String agg;
+	private final String core;
+	private final String q;
+
+	public Query(String agg, String core, String q) {
+		this.agg = agg;
+		this.core = core;
+		this.q = q;
+	}
+	
+	public String exec(String args, Properties configuration) throws Exception {
+		
+		SolrServer solrServer = null;
+		
+		if (core.equals("posts")) {
+			solrServer = SolrServerFactory.createPostCore(configuration);
+		} else if (core.equals("channels")) {
+			solrServer = SolrServerFactory.createChannelCore(configuration);
+		}
+		
+		SolrQuery solrQuery = new SolrQuery(q);
+		QueryResponse queryResponse = solrServer.query(solrQuery);
+		
+		if (agg.equals("count")) {
+			Long numFound = queryResponse.getResults().getNumFound();
+			return numFound.toString();
+		}
+		
+		return null;
+	}
+	
 }
