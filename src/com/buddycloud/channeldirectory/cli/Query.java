@@ -17,47 +17,12 @@ package com.buddycloud.channeldirectory.cli;
 
 import java.util.Properties;
 
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.response.QueryResponse;
-
-import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
-
 /**
  * @author Abmar
  *
  */
-public class Query {
+public interface Query {
 
-	private final String agg;
-	private final String core;
-	private final String q;
-
-	public Query(String agg, String core, String q) {
-		this.agg = agg;
-		this.core = core;
-		this.q = q;
-	}
-	
-	public String exec(String args, Properties configuration) throws Exception {
-		
-		SolrServer solrServer = null;
-		
-		if (core.equals("posts")) {
-			solrServer = SolrServerFactory.createPostCore(configuration);
-		} else if (core.equals("channels")) {
-			solrServer = SolrServerFactory.createChannelCore(configuration);
-		}
-		
-		SolrQuery solrQuery = new SolrQuery(q);
-		QueryResponse queryResponse = solrServer.query(solrQuery);
-		
-		if (agg.equals("count")) {
-			Long numFound = queryResponse.getResults().getNumFound();
-			return numFound.toString();
-		}
-		
-		return null;
-	}
+	public String exec(String args, Properties configuration) throws Exception;
 	
 }

@@ -1,5 +1,6 @@
 [
-	{name="personal-channels-count", agg="count", core="channels", q="channel-type:personal"},
-	{name="topic-channels-count", agg="count", core="channels", q="channel-type:topic"},
-	{name="post-count", agg="count", core="posts", q="content:[* TO *]"}
+	{name="personal-channels-count", type="solr", agg="count", core="channels", q="channel-type:personal"},
+	{name="topic-channels-count", type="solr", agg="count", core="channels", q="channel-type:topic"},
+	{name="post-count", type="solr", agg="count", core="posts", q="content:[* TO *]"},
+	{name="domain-count", type="dbms", q="SELECT COUNT(*) FROM subscribed_server"}
 ]

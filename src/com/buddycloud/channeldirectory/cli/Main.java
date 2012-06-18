@@ -57,10 +57,18 @@ public class Main {
 		for (int i = 0; i < rootArray.size(); i++) {
 			JsonObject queryElement = rootArray.get(i).getAsJsonObject();
 			String queryName = queryElement.get("name").getAsString();
+			String type = queryElement.get("type").getAsString();			
 			
-			Query query = new Query(queryElement.get("agg").getAsString(), 
-					queryElement.get("core").getAsString(), 
-					queryElement.get("q").getAsString());
+			Query query = null;
+			
+			if (type.equals("solr")) {
+				query = new QueryToSolr(queryElement.get("agg").getAsString(), 
+						queryElement.get("core").getAsString(), 
+						queryElement.get("q").getAsString());
+			} else if (type.equals("dbms")) {
+				query = new QueryToDBMS(queryElement.get("q").getAsString());
+			}
+			
 			
 			queries.put(queryName, query);
 		}
