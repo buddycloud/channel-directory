@@ -17,9 +17,11 @@ package com.buddycloud.channeldirectory.cli;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
+import com.mchange.v2.c3p0.DataSources;
 
 /**
  * @author Abmar
@@ -40,18 +42,21 @@ public class QueryToDBMS implements Query {
 	public String exec(String args, Properties configuration) throws Exception {
 		
 		ChannelDirectoryDataSource dataSource = new ChannelDirectoryDataSource(configuration);
-		PreparedStatement statement = dataSource.prepareStatement(sql);
-		ResultSet resultSet = statement.executeQuery();
-		
-		if (!resultSet.next()) {
-			return "";
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(sql);
+			ResultSet resultSet = statement.executeQuery();
+			if (!resultSet.next()) {
+				return "";
+			}
+			return resultSet.getString(1);
+			
+		} catch (SQLException e1) {
+			throw e1;
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+			DataSources.destroy(dataSource.getDataSource());
 		}
-		
-		String result = resultSet.getString(1);
-		
-		ChannelDirectoryDataSource.close(statement);
-		
-		return result;
 	}
 
 }

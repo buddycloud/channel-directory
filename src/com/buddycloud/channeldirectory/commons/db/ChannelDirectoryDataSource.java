@@ -74,6 +74,7 @@ public class ChannelDirectoryDataSource {
 	
 	private void createDataSource() throws PropertyVetoException {
 		this.dataSource = new ComboPooledDataSource();
+		dataSource.setMaxPoolSize(10);
 		dataSource.setDriverClass("org.postgresql.Driver");
 		dataSource.setJdbcUrl(configuration.getProperty("mahout.jdbc.url"));
 	}
