@@ -28,6 +28,7 @@ import org.xmpp.packet.IQ;
 import org.xmpp.packet.Packet;
 
 import com.buddycloud.channeldirectory.search.handler.QueryHandler;
+import com.buddycloud.channeldirectory.search.handler.active.MostActiveQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.common.mahout.ChannelRecommender;
 import com.buddycloud.channeldirectory.search.handler.content.ContentQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.metadata.MetadataQueryHandler;
@@ -123,6 +124,7 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 		addHandler(new NearbyQueryHandler(properties));
 		addHandler(new MetadataQueryHandler(properties));
 		addHandler(new ContentQueryHandler(properties));
+		addHandler(new MostActiveQueryHandler(properties));
 		
 		ChannelRecommender recommender = createRecommender(properties);
 		addHandler(new RecommendationQueryHandler(properties, recommender));
