@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
@@ -34,6 +35,7 @@ import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PayloadItem;
 
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.search.handler.response.PostData;
@@ -45,20 +47,25 @@ import com.buddycloud.channeldirectory.search.handler.response.PostData;
  */
 public class PostCrawler implements NodeCrawler {
 
+	/**
+	 * 
+	 */
 	private static final DecimalFormat LATLNG_FORMAT = new DecimalFormat("#0.00", 
 			new DecimalFormatSymbols(Locale.US));
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	private static Logger LOGGER = Logger.getLogger(PostCrawler.class);
 	
 	private Properties configuration;
+	private final ChannelDirectoryDataSource dataSource;
 	
-	public PostCrawler(Properties configuration) {
+	public PostCrawler(Properties configuration, ChannelDirectoryDataSource dataSource) {
 		this.configuration = configuration;
+		this.dataSource = dataSource;
 	}
 	
 	/* (non-Javadoc)
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
 	public void crawl(Node node, String server) throws Exception {
 		
@@ -74,64 +81,75 @@ public class PostCrawler implements NodeCrawler {
 		String nodeId = nodeFullJidSplitted[2];
 		
 		for (Item item : leafNode.getItems()) {
-			PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
-			PacketExtension payload = payloadItem.getPayload();
-			
-			Element atomEntry = DocumentHelper.parseText(
-					payload.toXML()).getRootElement();
-			
-			PostData postData = new PostData();
-			
-			postData.setParentFullId(nodeFullJid);
-			postData.setParentSimpleId(nodeId);
-			
-			Element authorElement = atomEntry.element("author");
-			String authorName = authorElement.elementText("name");
-			String authorUri = authorElement.elementText("uri");
-			
-			postData.setAuthor(authorName);
-			postData.setAuthorURI(authorUri);
-			
-			String content = atomEntry.elementText("content");
-			String updated = atomEntry.elementText("updated");
-			String published = atomEntry.elementText("published");
-			String id = atomEntry.elementText("id");
-			
-			postData.setContent(content);
-			postData.setUpdated(DATE_FORMAT.parse(updated));
-			postData.setPublished(DATE_FORMAT.parse(published));
-			postData.setId(id);
-			
-			Element geolocElement = atomEntry.element("geoloc");
-			
-			if (geolocElement != null) {
-				Geolocation geolocation = new Geolocation();
-				
-				String text = geolocElement.elementText("text");
-				geolocation.setText(text);
-				
-				String lat = geolocElement.elementText("lat");
-				String lon = geolocElement.elementText("lon");
-				
-				if (lat != null && lon != null) {
-					geolocation.setLat(Double.valueOf(lat));
-					geolocation.setLng(Double.valueOf(lon));
-				}
-				
-				postData.setGeolocation(geolocation);
+			try {
+				processPost(nodeFullJid, nodeId, item);
+			} catch (Exception e) {
+				LOGGER.warn(e);
 			}
-			
-			Element inReplyToElement = atomEntry.element("in-reply-to");
-			if (inReplyToElement != null) {
-				String replyRef = inReplyToElement.attributeValue("ref");
-				postData.setInReplyTo(replyRef);
-			}
-			
-			insert(postData);
 		}
 	}
 
-	
+	@SuppressWarnings("unchecked")
+	private void processPost(String nodeFullJid, String nodeId, Item item)
+			throws Exception {
+		
+		PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
+		PacketExtension payload = payloadItem.getPayload();
+		
+		Element atomEntry = DocumentHelper.parseText(
+				payload.toXML()).getRootElement();
+		
+		PostData postData = new PostData();
+		
+		postData.setParentFullId(nodeFullJid);
+		postData.setParentSimpleId(nodeId);
+		
+		Element authorElement = atomEntry.element("author");
+		String authorName = authorElement.elementText("name");
+		String authorUri = authorElement.elementText("uri");
+		
+		postData.setAuthor(authorName);
+		postData.setAuthorURI(authorUri);
+		
+		String content = atomEntry.elementText("content");
+		String updated = atomEntry.elementText("updated");
+		String published = atomEntry.elementText("published");
+		String id = atomEntry.elementText("id");
+		
+		postData.setContent(content);
+		postData.setUpdated(DATE_FORMAT.parse(updated));
+		postData.setPublished(DATE_FORMAT.parse(published));
+		postData.setId(id);
+		
+		Element geolocElement = atomEntry.element("geoloc");
+		
+		if (geolocElement != null) {
+			Geolocation geolocation = new Geolocation();
+			
+			String text = geolocElement.elementText("text");
+			geolocation.setText(text);
+			
+			String lat = geolocElement.elementText("lat");
+			String lon = geolocElement.elementText("lon");
+			
+			if (lat != null && lon != null) {
+				geolocation.setLat(Double.valueOf(lat));
+				geolocation.setLng(Double.valueOf(lon));
+			}
+			
+			postData.setGeolocation(geolocation);
+		}
+		
+		Element inReplyToElement = atomEntry.element("in-reply-to");
+		if (inReplyToElement != null) {
+			String replyRef = inReplyToElement.attributeValue("ref");
+			postData.setInReplyTo(replyRef);
+		}
+		
+		insert(postData);
+		ActivityHelper.updateActivity(postData, dataSource);
+	}
+
 	private void insert(PostData postData) throws SolrServerException,
 			IOException {
 		

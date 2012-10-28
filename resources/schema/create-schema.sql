@@ -43,3 +43,15 @@ CREATE TABLE taste_item_similarity (
 	similarity FLOAT NOT NULL,
 	PRIMARY KEY (item_id_a, item_id_b)
 );
+
+CREATE TABLE channel_activity (
+    channel_jid VARCHAR(300),
+    detailed_activity VARCHAR(2048),
+    summarized_activity BIGINT,
+    updated TIMESTAMP,
+    earliest TIMESTAMP,
+    PRIMARY KEY (channel_jid)
+);
+
+CREATE INDEX channel_activity_summary_index ON channel_activity (summarized_activity DESC);
+CREATE INDEX channel_activity_updated_index ON channel_activity (updated DESC);

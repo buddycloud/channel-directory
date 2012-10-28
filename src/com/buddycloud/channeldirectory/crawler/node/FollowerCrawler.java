@@ -80,32 +80,11 @@ public class FollowerCrawler implements NodeCrawler {
 		}
 		
 		for (Affiliation affiliation : affiliations) {
-		
-			String user = affiliation.getNodeId();
-			
-			CrawlerHelper.enqueueNewServer(user, dataSource);
-			
-			Long userId = fetchRowId(user, "t_user");
-			Long itemId = fetchRowId(itemJID, "item");
-			
-			Statement selectTasteSt = dataSource.createStatement();
-			ResultSet selectTasteResult = selectTasteSt.executeQuery(
-					"SELECT * FROM taste_preferences WHERE user_id = '" + userId + "' " +
-					"AND item_id = '" + itemId + "'");
-			
-			boolean affiliationExists = selectTasteResult.next();
-			
-			LOGGER.debug(user + " follows " + itemJID + 
-					". Affiliation exists? " + affiliationExists);
-			
-			if (!affiliationExists) {
-				Statement insertTasteSt = dataSource.createStatement();
-				insertTasteSt.execute("INSERT INTO taste_preferences(user_id, item_id) " +
-						"VALUES ('" + userId + "', '" + itemId + "')");
-				ChannelDirectoryDataSource.close(insertTasteSt);
+			try {
+				processAffiliation(itemJID, affiliation);
+			} catch (Exception e) {
+				LOGGER.warn(e);
 			}
-			
-			ChannelDirectoryDataSource.close(selectTasteSt);
 		}
 	
 		try {
@@ -116,39 +95,107 @@ public class FollowerCrawler implements NodeCrawler {
 		
 	}
 
-	private void updateSubscribedNode(String nodeName, String server) throws SQLException {
+	private void processAffiliation(String itemJID, Affiliation affiliation)
+			throws SQLException {
+		String user = affiliation.getNodeId();
 		
-		PreparedStatement prepareStatement = dataSource.prepareStatement(
-				"UPDATE subscribed_node SET subscribers_updated = ? WHERE name = ? AND server = ?", 
-				new Date(System.currentTimeMillis()), nodeName, server);
-		prepareStatement.execute();
-		ChannelDirectoryDataSource.close(prepareStatement);
+		CrawlerHelper.enqueueNewServer(user, dataSource);
+		
+		Long userId = fetchRowId(user, "t_user");
+		Long itemId = fetchRowId(itemJID, "item");
+		
+		boolean affiliationExists = affiliationExists(userId, itemId);
+		
+		LOGGER.debug(user + " follows " + itemJID + 
+				". Affiliation exists? " + affiliationExists);
+		
+		if (!affiliationExists) {
+			insertTaste(userId, itemId);
+		}
+	}
+
+	private boolean affiliationExists(Long userId, Long itemId)
+			throws SQLException {
+		Statement selectTasteSt = null;
+		try {
+			selectTasteSt = dataSource.createStatement();
+			ResultSet selectTasteResult = selectTasteSt.executeQuery(
+					"SELECT * FROM taste_preferences WHERE user_id = '" + userId + "' " +
+							"AND item_id = '" + itemId + "'");
+			return selectTasteResult.next();
+		} catch (SQLException e) {
+			LOGGER.error(e);
+			throw e;
+		} finally {
+			ChannelDirectoryDataSource.close(selectTasteSt);
+		}
+	}
+
+	private void insertTaste(Long userId, Long itemId) throws SQLException {
+		Statement insertTasteSt = null;
+		try {
+			insertTasteSt = dataSource.createStatement();
+			insertTasteSt.execute("INSERT INTO taste_preferences(user_id, item_id) " +
+					"VALUES ('" + userId + "', '" + itemId + "')");
+		} catch (SQLException e) {
+			LOGGER.error(e);
+			throw e;
+		} finally {
+			ChannelDirectoryDataSource.close(insertTasteSt);
+		}
+	}
+
+	private void updateSubscribedNode(String nodeName, String server) throws SQLException {
+		PreparedStatement prepareStatement = null;
+		try {
+			prepareStatement = dataSource.prepareStatement(
+					"UPDATE subscribed_node SET subscribers_updated = ? WHERE name = ? AND server = ?", 
+					new Date(System.currentTimeMillis()), nodeName, server);
+			prepareStatement.execute();
+		} catch (SQLException e) {
+			LOGGER.error(e);
+			throw e;
+		} finally {
+			ChannelDirectoryDataSource.close(prepareStatement);
+		}
 	}
 	
-	private Long fetchRowId(String user, String tableName)
-			throws SQLException {
-		
-		Statement selectRowSt = dataSource.createStatement();
-		ResultSet selectRowResult = selectRowSt.executeQuery(
-				"SELECT id FROM " + tableName + " WHERE jid = '" + user + "'");
-		Long userId = null;
-		
-		if (selectRowResult.next()) {
-			userId = selectRowResult.getLong("id");
-		} else {
-			Statement insertRowSt = dataSource.createStatement();
-			insertRowSt.execute("INSERT INTO " + tableName + "(jid) VALUES ('" + user + "') RETURNING id");
+	private Long fetchRowId(String user, String tableName) throws SQLException {
+		Statement selectRowSt =null;
+		try {
+			selectRowSt = dataSource.createStatement();
+			ResultSet selectRowResult = selectRowSt.executeQuery(
+					"SELECT id FROM " + tableName + " WHERE jid = '" + user + "'");
+			Long userId = null;
 			
+			if (selectRowResult.next()) {
+				userId = selectRowResult.getLong("id");
+			} else {
+				userId = insertTasteObject(user, tableName);
+			}
+			return userId;
+		} catch (SQLException e) {
+			LOGGER.error(e);
+			throw e;
+		} finally {
+			ChannelDirectoryDataSource.close(selectRowSt);
+		}
+	}
+
+	private Long insertTasteObject(String object, String tableName) throws SQLException {
+		Statement insertRowSt = null;
+		try {
+			insertRowSt = dataSource.createStatement();
+			insertRowSt.execute("INSERT INTO " + tableName + "(jid) VALUES ('" + object + "') RETURNING id");
 			ResultSet insertUserResult = insertRowSt.getResultSet();
 			insertUserResult.next();
-			userId = insertUserResult.getLong("id");
-			
+			return insertUserResult.getLong("id");
+		} catch (SQLException e) {
+			LOGGER.error(e);
+			throw e;
+		} finally {
 			ChannelDirectoryDataSource.close(insertRowSt);
 		}
-		
-		ChannelDirectoryDataSource.close(selectRowSt);
-		
-		return userId;
 	}
 
 	/* (non-Javadoc)

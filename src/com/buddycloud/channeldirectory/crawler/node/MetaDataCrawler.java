@@ -163,11 +163,18 @@ public class MetaDataCrawler implements NodeCrawler {
 	}
 
 	private void updateSubscribedNode(String nodeName, String server) throws SQLException {
-		PreparedStatement prepareStatement = dataSource.prepareStatement(
-				"UPDATE subscribed_node SET metadata_updated = ? WHERE name = ? AND server = ?", 
-				new Date(System.currentTimeMillis()), nodeName, server);
-		prepareStatement.execute();
-		ChannelDirectoryDataSource.close(prepareStatement);
+		PreparedStatement prepareStatement = null;
+		try {
+			prepareStatement = dataSource.prepareStatement(
+					"UPDATE subscribed_node SET metadata_updated = ? WHERE name = ? AND server = ?", 
+					new Date(System.currentTimeMillis()), nodeName, server);
+			prepareStatement.execute();
+		} catch (SQLException e) {
+			LOGGER.error(e);
+			throw e;
+		} finally {
+			ChannelDirectoryDataSource.close(prepareStatement);
+		}
 	}
 
 	/* (non-Javadoc)

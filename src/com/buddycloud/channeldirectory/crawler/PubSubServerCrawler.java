@@ -70,7 +70,7 @@ public class PubSubServerCrawler {
 		
 		this.nodeCrawlers = new LinkedList<NodeCrawler>();
 		nodeCrawlers.add(new MetaDataCrawler(configuration, dataSource));
-		nodeCrawlers.add(new PostCrawler(configuration));
+		nodeCrawlers.add(new PostCrawler(configuration, dataSource));
 		nodeCrawlers.add(new FollowerCrawler(dataSource));
 		
 		try {
