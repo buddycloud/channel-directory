@@ -15,6 +15,7 @@
  */
 package com.buddycloud.channeldirectory.search;
 
+import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.xmpp.component.AbstractComponent;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.Packet;
 
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.search.handler.QueryHandler;
 import com.buddycloud.channeldirectory.search.handler.active.MostActiveQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.common.mahout.ChannelRecommender;
@@ -121,10 +123,18 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 	}
 
 	private void createHandlers() {
+		
+		ChannelDirectoryDataSource dataSource = null;
+		try {
+			dataSource = new ChannelDirectoryDataSource(properties);
+		} catch (PropertyVetoException e) {
+			throw new RuntimeException("Could not start data source", e);
+		}
+		
 		addHandler(new NearbyQueryHandler(properties));
 		addHandler(new MetadataQueryHandler(properties));
 		addHandler(new ContentQueryHandler(properties));
-		addHandler(new MostActiveQueryHandler(properties));
+		addHandler(new MostActiveQueryHandler(properties, dataSource));
 		
 		ChannelRecommender recommender = createRecommender(properties);
 		addHandler(new RecommendationQueryHandler(properties, recommender));

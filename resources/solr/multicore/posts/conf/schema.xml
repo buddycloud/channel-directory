@@ -97,8 +97,8 @@
  <fields>   
   <!-- general -->
   <field name="id" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
-  <field name="author" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
   <field name="author-uri" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+  <field name="author" type="string" indexed="true" stored="true" multiValued="false" required="false"/>
   
   <field name="content" type="text" indexed="true" stored="true" multiValued="false" required="true"/> 
  

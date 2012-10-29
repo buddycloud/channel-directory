@@ -147,7 +147,7 @@ public class PostCrawler implements NodeCrawler {
 		}
 		
 		insert(postData);
-		ActivityHelper.updateActivity(postData, dataSource);
+		ActivityHelper.updateActivity(postData, dataSource, configuration);
 	}
 
 	private void insert(PostData postData) throws SolrServerException,

@@ -15,28 +15,29 @@
  */
 package com.buddycloud.channeldirectory.search.handler.active;
 
-import java.net.MalformedURLException;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
+import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.search.handler.common.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
 import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.search.rsm.RSM;
 import com.buddycloud.channeldirectory.search.rsm.RSMUtils;
-import com.buddycloud.channeldirectory.search.rsm.SolrRSMUtils;
 import com.buddycloud.channeldirectory.search.utils.XMPPUtils;
 
 /**
@@ -47,8 +48,16 @@ import com.buddycloud.channeldirectory.search.utils.XMPPUtils;
  */
 public class MostActiveQueryHandler extends ChannelQueryHandler {
 
-	public MostActiveQueryHandler(Properties properties) {
+	/**
+	 * 
+	 */
+	private static final int DEFAULT_PAGE = 10;
+	private static final int LOOK_BACK = 4; // In weeks
+	private final ChannelDirectoryDataSource dataSource;
+
+	public MostActiveQueryHandler(Properties properties, ChannelDirectoryDataSource dataSource) {
 		super("http://buddycloud.com/channel_directory/most_active", properties);
+		this.dataSource = dataSource;
 	}
 
 	@Override
@@ -58,9 +67,21 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		
 		RSM rsm = RSMUtils.parseRSM(queryElement);
 		
+		Integer offset = rsm.getIndex() != null ? rsm.getIndex() : 0;
+		Integer limit = rsm.getMax() != null ? rsm.getMax() : DEFAULT_PAGE;
+		
+		List<String> mostActiveChannelsJids = null;
+		
+		try {
+			mostActiveChannelsJids = retrieveMostActiveChannels(dataSource, limit, offset);
+		} catch (SQLException e1) {
+			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
+					getLogger());
+		}
+		
 		List<ChannelData> channelObjects;
 		try {
-			channelObjects = findMostActive(rsm);
+			channelObjects = retrieveFromSolr(mostActiveChannelsJids);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
@@ -69,26 +90,27 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		return createIQResponse(iq, channelObjects, rsm);
 	}
 
-	private List<ChannelData> findMostActive(RSM rsm) throws MalformedURLException, SolrServerException {
+	private List<ChannelData> retrieveFromSolr(List<String> mostActiveChannelsJids) throws Exception {
 		SolrServer solrServer = SolrServerFactory.createChannelCore(getProperties());
-		SolrQuery solrQuery = new SolrQuery();
-		
-		SolrRSMUtils.preprocess(solrQuery, rsm);
-		QueryResponse queryResponse = solrServer.query(solrQuery);
-		SolrRSMUtils.postprocess(queryResponse, rsm);
-		
-		return convertResponse(queryResponse);
+		List<ChannelData> channelsData = new LinkedList<ChannelData>();
+		for (String channelJid : mostActiveChannelsJids) {
+			SolrQuery solrQuery = new SolrQuery("jid:" + channelJid);
+			QueryResponse queryResponse = solrServer.query(solrQuery);
+			ChannelData channelData = convertResponse(queryResponse);
+			if (channelData == null) {
+				throw new Exception("Could not retrieve channels metadata.");
+			}
+			channelsData.add(channelData);
+		}
+		return channelsData;
 	}
 	
-	private static List<ChannelData> convertResponse(QueryResponse queryResponse) {
-		List<ChannelData> channels = new ArrayList<ChannelData>();
+	private static ChannelData convertResponse(QueryResponse queryResponse) {
 		SolrDocumentList results = queryResponse.getResults();
-		
-		for (SolrDocument solrDocument : results) {
-			channels.add(convertDocument(solrDocument));
+		if (results.isEmpty()) {
+			return null;
 		}
-		
-		return channels;
+		return convertDocument(results.iterator().next());
 	}
 
 	private static ChannelData convertDocument(SolrDocument solrDocument) {
@@ -108,5 +130,28 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		channelData.setDescription((String) solrDocument.getFieldValue("description"));
 		
 		return channelData;
+	}
+	
+	private static List<String> retrieveMostActiveChannels(ChannelDirectoryDataSource dataSource, 
+			int limit, int offset) throws SQLException  {
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"SELECT channel_jid FROM channel_activity " +
+					"WHERE updated > now() - interval'" + LOOK_BACK + " weeks' " +
+					"ORDER BY summarized_activity DESC " +
+					"LIMIT ? OFFSET ?", 
+					limit, offset);
+			ResultSet resultSet = statement.executeQuery();
+			List<String> channelJids = new LinkedList<String>();
+			while (resultSet.next()) {
+				channelJids.add(resultSet.getString("channel_jid"));
+			}
+			return channelJids;
+		} catch (SQLException e1) {
+			throw e1;
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
 	}
 }

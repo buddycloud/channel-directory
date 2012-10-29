@@ -21,10 +21,15 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Properties;
 
 import org.apache.log4j.Logger;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
+import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
 import com.buddycloud.channeldirectory.search.handler.response.PostData;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -47,12 +52,23 @@ public class ActivityHelper {
 	/**
 	 * @param postData
 	 * @param dataSource
+	 * @param configuration 
 	 * @throws ParseException 
 	 */
 	public static void updateActivity(PostData postData, 
-			ChannelDirectoryDataSource dataSource) {
+			ChannelDirectoryDataSource dataSource, Properties properties) {
 		
 		String channelJid = postData.getParentSimpleId();
+		
+		try {
+			if (!isChannelRegistered(channelJid, properties)) {
+				return;
+			}
+		} catch (Exception e1) {
+			LOGGER.error("Could not retrieve channel info.", e1);
+			return;
+		}
+		
 		Long published = postData.getPublished().getTime();
 		long thisPostPublishedInHours = published / ONE_HOUR;
 		
@@ -122,6 +138,19 @@ public class ActivityHelper {
 		}
 	}
 	
+	/**
+	 * @param channelJid
+	 * @param properties
+	 * @return
+	 */
+	private static boolean isChannelRegistered(String channelJid,
+			Properties properties) throws Exception {
+		SolrServer solrServer = SolrServerFactory.createChannelCore(properties);
+		SolrQuery solrQuery = new SolrQuery("jid:" + channelJid);
+		QueryResponse queryResponse = solrServer.query(solrQuery);
+		return !queryResponse.getResults().isEmpty();
+	}
+
 	/**
 	 * @param channelJid
 	 * @param newChannelActivity
