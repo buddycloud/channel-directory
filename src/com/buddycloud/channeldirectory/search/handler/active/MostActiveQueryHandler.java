@@ -66,14 +66,10 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		Element queryElement = iq.getElement().element("query");
 		
 		RSM rsm = RSMUtils.parseRSM(queryElement);
-		
-		Integer offset = rsm.getIndex() != null ? rsm.getIndex() : 0;
-		Integer limit = rsm.getMax() != null ? rsm.getMax() : DEFAULT_PAGE;
-		
 		List<String> mostActiveChannelsJids = null;
 		
 		try {
-			mostActiveChannelsJids = retrieveMostActiveChannels(dataSource, limit, offset);
+			mostActiveChannelsJids = retrieveMostActiveChannels(dataSource, rsm);
 		} catch (SQLException e1) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
@@ -132,21 +128,35 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		return channelData;
 	}
 	
-	private static List<String> retrieveMostActiveChannels(ChannelDirectoryDataSource dataSource, 
-			int limit, int offset) throws SQLException  {
+	private static List<String> retrieveMostActiveChannels(
+			ChannelDirectoryDataSource dataSource, 
+			RSM rsm) throws SQLException  {
+		
+		Integer offset = rsm.getIndex() != null ? rsm.getIndex() : 0;
+		Integer limit = rsm.getMax() != null ? rsm.getMax() : DEFAULT_PAGE;
+		rsm.setCount(0);
+		
 		PreparedStatement statement = null;
 		try {
 			statement = dataSource.prepareStatement(
-					"SELECT channel_jid FROM channel_activity " +
+					"SELECT channel_jid, count(*) OVER() AS channel_count FROM channel_activity " +
 					"WHERE updated > now() - interval'" + LOOK_BACK + " weeks' " +
 					"ORDER BY summarized_activity DESC " +
 					"LIMIT ? OFFSET ?", 
 					limit, offset);
 			ResultSet resultSet = statement.executeQuery();
 			List<String> channelJids = new LinkedList<String>();
+			String lastChannelId = null;
 			while (resultSet.next()) {
-				channelJids.add(resultSet.getString("channel_jid"));
+				String channelJid = resultSet.getString("channel_jid");
+				if (lastChannelId == null) {
+					rsm.setFirst(channelJid);
+				}
+				lastChannelId = channelJid;
+				channelJids.add(channelJid);
+				rsm.setCount(resultSet.getInt("channel_count"));
 			}
+			rsm.setLast(lastChannelId);
 			return channelJids;
 		} catch (SQLException e1) {
 			throw e1;
