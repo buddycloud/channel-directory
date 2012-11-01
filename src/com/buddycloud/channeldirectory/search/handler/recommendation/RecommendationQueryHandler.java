@@ -16,7 +16,7 @@
 package com.buddycloud.channeldirectory.search.handler.recommendation;
 
 import java.sql.SQLException;
-import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -25,17 +25,26 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smackx.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.packet.DiscoverInfo;
+import org.jivesoftware.smackx.packet.DiscoverInfo.Identity;
+import org.jivesoftware.smackx.packet.DiscoverItems;
+import org.jivesoftware.smackx.packet.DiscoverItems.Item;
+import org.jivesoftware.smackx.pubsub.Node;
+import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
+import com.buddycloud.channeldirectory.commons.solr.SolrUtils;
+import com.buddycloud.channeldirectory.crawler.node.MetaDataCrawler;
 import com.buddycloud.channeldirectory.search.handler.common.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.common.mahout.ChannelRecommender;
 import com.buddycloud.channeldirectory.search.handler.common.mahout.RecommendationResponse;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
-import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.search.rsm.MahoutRSMUtils;
 import com.buddycloud.channeldirectory.search.rsm.RSM;
 import com.buddycloud.channeldirectory.search.rsm.RSMUtils;
@@ -50,8 +59,10 @@ import com.buddycloud.channeldirectory.search.utils.XMPPUtils;
  */
 public class RecommendationQueryHandler extends ChannelQueryHandler {
 
-	private final ChannelRecommender recommender;
 	private static final int DEFAULT_PAGE = 10;
+	
+	private final ChannelRecommender recommender;
+	private XMPPConnection connection;
 	
 	public RecommendationQueryHandler(Properties properties, ChannelRecommender recommender) {
 		super("http://buddycloud.com/channel_directory/recommendation_query", properties);
@@ -106,11 +117,74 @@ public class RecommendationQueryHandler extends ChannelQueryHandler {
 			QueryResponse queryResponse = solrServer.query(solrQuery);
 			ChannelData channelData = convertResponse(queryResponse);
 			if (channelData == null) {
-				throw new Exception("Could not retrieve channels metadata.");
+				channelData = retrieveFromPubSub(recommendedChannelData.getId());
+			}
+			if (channelData == null) {
+				channelData = recommendedChannelData;
 			}
 			channelsData.add(channelData);
 		}
 		return channelsData;
+	}
+	
+	private ChannelData retrieveFromPubSub(String jid) {
+		try {
+			XMPPConnection connection = getConnection();
+			Node node = getNode(jid, connection);
+			if (node == null) {
+				return null;
+			}
+			return MetaDataCrawler.fetchAndUpdateMetadata(node, jid, getProperties());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	public XMPPConnection getConnection() throws Exception {
+		if (connection == null || !connection.isConnected()) {
+			connection = XMPPUtils.createCrawlerConnection(getProperties());
+		}
+		return connection;
+	}
+
+	private Node getNode(String jid, XMPPConnection connection)
+			throws XMPPException {
+		String[] splitJid = jid.split("@");
+		String serverName = splitJid[1];
+		ServiceDiscoveryManager discovery = new ServiceDiscoveryManager(connection);
+		DiscoverItems discoverNodes = discovery.discoverItems(serverName);
+		Iterator<Item> items = discoverNodes.getItems();
+		
+		while (items.hasNext()) {
+			DiscoverItems.Item item = (DiscoverItems.Item) items.next();
+			try {
+				DiscoverInfo discoverInfo = discovery.discoverInfo(item.getEntityID());
+				Identity identity = discoverInfo.getIdentities().next();
+				if (identity.getCategory().equals("pubsub") && 
+						identity.getType().equals("service")) {
+					PubSubManager pubsubManager = new PubSubManager(connection, item.getEntityID());
+					Node node = getNode(jid, pubsubManager);
+					if (node != null) {
+						return node;
+					}
+				}
+			} catch (Exception e) {}
+		}
+		return null;
+	}
+
+	private Node getNode(String jid, PubSubManager pubsubManager) {
+		Node node = null;
+		try {
+			node = pubsubManager.getNode("/user/" + jid + "/posts");	
+		} catch (Exception e) {}
+		
+		if (node == null) {
+			try {
+				node = pubsubManager.getNode("/topic/" + jid + "/posts");	
+			} catch (Exception e) {}
+		}
+		return node;
 	}
 	
 	private static ChannelData convertResponse(QueryResponse queryResponse) {
@@ -118,26 +192,7 @@ public class RecommendationQueryHandler extends ChannelQueryHandler {
 		if (results.isEmpty()) {
 			return null;
 		}
-		return convertDocument(results.iterator().next());
-	}
-	
-	private static ChannelData convertDocument(SolrDocument solrDocument) {
-		ChannelData channelData = new ChannelData();
-		String latLonStr = (String) solrDocument.getFieldValue("geoloc");
-		if (latLonStr != null) {
-			String[] latLonSplit = latLonStr.split(",");
-			channelData.setGeolocation(new Geolocation(
-					Double.parseDouble(latLonSplit[0]), 
-					Double.parseDouble(latLonSplit[1])));
-		}
-		
-		channelData.setCreationDate((Date) solrDocument.getFieldValue("creation-date"));
-		channelData.setChannelType((String) solrDocument.getFieldValue("channel-type"));
-		channelData.setId((String) solrDocument.getFieldValue("jid"));
-		channelData.setTitle((String) solrDocument.getFieldValue("title"));
-		channelData.setDescription((String) solrDocument.getFieldValue("description"));
-		
-		return channelData;
+		return SolrUtils.convertToChannelData(results.iterator().next());
 	}
 	
 	private List<ChannelData> findRecommendedChannels(String search, RSM rsm)

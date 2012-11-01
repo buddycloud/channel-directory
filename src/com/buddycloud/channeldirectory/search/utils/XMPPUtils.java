@@ -15,7 +15,12 @@
  */
 package com.buddycloud.channeldirectory.search.utils;
 
+import java.util.Properties;
+import java.util.Random;
+
 import org.apache.log4j.Logger;
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.XMPPConnection;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.PacketError;
 import org.xmpp.packet.PacketError.Condition;
@@ -88,5 +93,24 @@ public class XMPPUtils {
 		result.setError(e);
 		
 		return result;
+	}
+
+	public static XMPPConnection createCrawlerConnection(Properties configuration)
+			throws Exception {
+		
+		String serviceName = configuration.getProperty("crawler.xmpp.servicename");
+		String host = configuration.getProperty("crawler.xmpp.host");
+		String userName = configuration.getProperty("crawler.xmpp.username");
+		
+		ConnectionConfiguration cc = new ConnectionConfiguration(
+				host,
+				Integer.parseInt(configuration.getProperty("crawler.xmpp.port")),
+				serviceName);
+		
+		XMPPConnection connection = new XMPPConnection(cc);
+		connection.connect();
+		connection.login(userName, configuration.getProperty("crawler.xmpp.password"), "crawler" + new Random().nextLong());
+		
+		return connection;
 	}
 }

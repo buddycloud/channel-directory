@@ -19,7 +19,6 @@ import java.net.MalformedURLException;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -30,6 +29,7 @@ import org.jivesoftware.smack.packet.Packet;
 import com.buddycloud.channeldirectory.commons.ConfigurationUtils;
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
+import com.buddycloud.channeldirectory.search.utils.XMPPUtils;
 
 /**
  * Creates and starts the Crawler component.
@@ -51,7 +51,7 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		
 		Properties configuration = ConfigurationUtils.loadConfiguration();
-		XMPPConnection connection = createConnection(configuration);
+		XMPPConnection connection = XMPPUtils.createCrawlerConnection(configuration);
 		addTraceListeners(connection);
 		
 		PubSubManagers managers = new PubSubManagers(connection);
@@ -85,25 +85,6 @@ public class Main {
 				LOGGER.debug("R: " + arg0.toXML());
 			}
 		}, iqFilter);
-	}
-
-	private static XMPPConnection createConnection(Properties configuration)
-			throws Exception {
-		
-		String serviceName = configuration.getProperty("crawler.xmpp.servicename");
-		String host = configuration.getProperty("crawler.xmpp.host");
-		String userName = configuration.getProperty("crawler.xmpp.username");
-		
-		ConnectionConfiguration cc = new ConnectionConfiguration(
-				host,
-				Integer.parseInt(configuration.getProperty("crawler.xmpp.port")),
-				serviceName);
-		
-		XMPPConnection connection = new XMPPConnection(cc);
-		connection.connect();
-		connection.login(userName, configuration.getProperty("crawler.xmpp.password"));
-		
-		return connection;
 	}
 
 }

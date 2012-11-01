@@ -44,6 +44,8 @@ public class ChannelData extends ContentData {
 	private String channelType;
 	private String description;
 	private Date creationDate;
+
+	private String defaultAffiliation;
 	
 	public void setGeolocation(Geolocation geolocation) {
 		this.geolocation = geolocation;
@@ -83,6 +85,14 @@ public class ChannelData extends ContentData {
 
 	public void setCreationDate(Date creationDate) {
 		this.creationDate = creationDate;
+	}
+
+	public void setDefaultAffiliation(String defaultAffiliation) {
+		this.defaultAffiliation = defaultAffiliation;
+	}
+	
+	public String getDefaultAffiliation() {
+		return defaultAffiliation;
 	}
 
 }

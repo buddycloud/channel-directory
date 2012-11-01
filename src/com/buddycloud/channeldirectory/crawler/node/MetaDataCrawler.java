@@ -78,10 +78,35 @@ public class MetaDataCrawler implements NodeCrawler {
 		
 		CrawlerHelper.enqueueNewServer(nodeId, dataSource);
 		
+		fetchAndUpdateMetadata(node, nodeId, configuration);
+		
+		try {
+			updateSubscribedNode(nodeId, server);
+		} catch (SQLException e1) {
+			LOGGER.warn("Could not update subscribed node.", e1);
+		}
+		
+	}
+
+	public static ChannelData fetchAndUpdateMetadata(Node node, String nodeId, 
+			Properties configuration) throws XMPPException {
+		
 		LeafNode leaf = (LeafNode) node;
 		DiscoverInfo discoverInfo = leaf.discoverInfo();
 		DataForm form = (DataForm) discoverInfo.getExtension("jabber:x:data");
 		
+		ChannelData channelData = extractChannelData(nodeId, form);
+		
+		try {
+			insertOrUpate(channelData, configuration);
+		} catch (Exception e) {
+			LOGGER.warn("Could not update node metadata.", e);
+		}
+		
+		return channelData;
+	}
+
+	private static ChannelData extractChannelData(String nodeId, DataForm form) {
 		ChannelData channelData = new ChannelData();
 		
 		Geolocation geolocation = new Geolocation();
@@ -96,6 +121,8 @@ public class MetaDataCrawler implements NodeCrawler {
 			
 			if (formField.getVariable().equals("pubsub#title")) {
 				channelData.setTitle(fieldValue);
+			} else if (formField.getVariable().equals("buddycloud#default_affiliation")) {
+				channelData.setDefaultAffiliation(fieldValue);
 			} else if (formField.getVariable().equals("pubsub#description")) {
 				channelData.setDescription(fieldValue);
 			} else if (formField.getVariable().equals("x-buddycloud#geoloc-lat")) {
@@ -119,22 +146,10 @@ public class MetaDataCrawler implements NodeCrawler {
 				&& geolocation.getText() == null) {
 			channelData.setGeolocation(null);
 		}
-		
-		try {
-			updateSubscribedNode(nodeId, server);
-		} catch (SQLException e1) {
-			LOGGER.warn("Could not update subscribed node.", e1);
-		}
-		
-		try {
-			insertOrUpate(channelData);
-		} catch (Exception e) {
-			LOGGER.warn("Could not update node metadata.", e);
-		}
-		
+		return channelData;
 	}
 
-	private void insertOrUpate(ChannelData channelData) throws Exception {
+	private static void insertOrUpate(ChannelData channelData, Properties configuration) throws Exception {
 
 		SolrInputDocument object = new SolrInputDocument();
 		
@@ -155,6 +170,7 @@ public class MetaDataCrawler implements NodeCrawler {
 		object.setField("title", channelData.getTitle());
 		object.setField("description", channelData.getDescription());
 		object.setField("creation-date", channelData.getCreationDate());
+		object.setField("default-affiliation", channelData.getDefaultAffiliation());
 		object.setField("channel-type", channelData.getChannelType()); //topic or personal
 		
 		SolrServer solrServer = SolrServerFactory.createChannelCore(configuration);

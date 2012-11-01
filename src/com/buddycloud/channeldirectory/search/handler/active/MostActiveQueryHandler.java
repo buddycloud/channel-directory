@@ -18,7 +18,6 @@ package com.buddycloud.channeldirectory.search.handler.active;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -26,16 +25,15 @@ import java.util.Properties;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
+import com.buddycloud.channeldirectory.commons.solr.SolrUtils;
 import com.buddycloud.channeldirectory.search.handler.common.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
-import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.search.rsm.RSM;
 import com.buddycloud.channeldirectory.search.rsm.RSMUtils;
 import com.buddycloud.channeldirectory.search.utils.XMPPUtils;
@@ -106,28 +104,9 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		if (results.isEmpty()) {
 			return null;
 		}
-		return convertDocument(results.iterator().next());
+		return SolrUtils.convertToChannelData(results.iterator().next());
 	}
 
-	private static ChannelData convertDocument(SolrDocument solrDocument) {
-		ChannelData channelData = new ChannelData();
-		String latLonStr = (String) solrDocument.getFieldValue("geoloc");
-		if (latLonStr != null) {
-			String[] latLonSplit = latLonStr.split(",");
-			channelData.setGeolocation(new Geolocation(
-					Double.parseDouble(latLonSplit[0]), 
-					Double.parseDouble(latLonSplit[1])));
-		}
-		
-		channelData.setCreationDate((Date) solrDocument.getFieldValue("creation-date"));
-		channelData.setChannelType((String) solrDocument.getFieldValue("channel-type"));
-		channelData.setId((String) solrDocument.getFieldValue("jid"));
-		channelData.setTitle((String) solrDocument.getFieldValue("title"));
-		channelData.setDescription((String) solrDocument.getFieldValue("description"));
-		
-		return channelData;
-	}
-	
 	private static List<String> retrieveMostActiveChannels(
 			ChannelDirectoryDataSource dataSource, 
 			RSM rsm) throws SQLException  {

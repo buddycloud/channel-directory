@@ -17,7 +17,6 @@ package com.buddycloud.channeldirectory.search.handler.metadata;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -31,9 +30,9 @@ import org.dom4j.Element;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
+import com.buddycloud.channeldirectory.commons.solr.SolrUtils;
 import com.buddycloud.channeldirectory.search.handler.common.ChannelQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
-import com.buddycloud.channeldirectory.search.handler.response.Geolocation;
 import com.buddycloud.channeldirectory.search.rsm.RSM;
 import com.buddycloud.channeldirectory.search.rsm.RSMUtils;
 import com.buddycloud.channeldirectory.search.rsm.SolrRSMUtils;
@@ -99,28 +98,9 @@ public class MetadataQueryHandler extends ChannelQueryHandler {
 		SolrDocumentList results = queryResponse.getResults();
 		
 		for (SolrDocument solrDocument : results) {
-			channels.add(convertDocument(solrDocument));
+			channels.add(SolrUtils.convertToChannelData(solrDocument));
 		}
 		
 		return channels;
-	}
-
-	private static ChannelData convertDocument(SolrDocument solrDocument) {
-		ChannelData channelData = new ChannelData();
-		String latLonStr = (String) solrDocument.getFieldValue("geoloc");
-		if (latLonStr != null) {
-			String[] latLonSplit = latLonStr.split(",");
-			channelData.setGeolocation(new Geolocation(
-					Double.parseDouble(latLonSplit[0]), 
-					Double.parseDouble(latLonSplit[1])));
-		}
-		
-		channelData.setCreationDate((Date) solrDocument.getFieldValue("creation-date"));
-		channelData.setChannelType((String) solrDocument.getFieldValue("channel-type"));
-		channelData.setId((String) solrDocument.getFieldValue("jid"));
-		channelData.setTitle((String) solrDocument.getFieldValue("title"));
-		channelData.setDescription((String) solrDocument.getFieldValue("description"));
-		
-		return channelData;
 	}
 }

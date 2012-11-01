@@ -79,6 +79,7 @@
   <field name="geoloc"    type="location"   indexed="true"  stored="true"  multiValued="false" />
   <field name="geoloc-text"    type="location"   indexed="true"  stored="true"  multiValued="false" />
   <field name="channel-type"      type="string"   indexed="true"  stored="true"  multiValued="false"/>
+  <field name="default-affiliation"      type="string"   indexed="true"  stored="true"  multiValued="false"/>
   <field name="creation-date" type="date" indexed="true" stored="true"  multiValued="false"/>
   
   <!-- catchall field, containing all other searchable text fields (implemented
