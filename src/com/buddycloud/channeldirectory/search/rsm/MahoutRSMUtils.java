@@ -66,14 +66,18 @@ public class MahoutRSMUtils {
 			throws IllegalArgumentException {
 		
 		rsm.setCount(response.getNumFound());
+		List<ChannelData> allItems = response.getResponse();
 		
-		List<ChannelData> responseItems = response.getResponse().subList(
-				Integer.valueOf(rsm.getFirst()) - 1, 
-				Integer.valueOf(rsm.getLast()));
+		Integer fromIndex = Integer.valueOf(rsm.getFirst()) - 1;
+		Integer toIndex = Math.min(Integer.valueOf(rsm.getLast()), allItems.size());
+		
+		List<ChannelData> responseItems = allItems.subList(fromIndex, toIndex);
 		
 		if (responseItems.isEmpty()) {
 			rsm.setFirst(null);
 			rsm.setLast(null);
+		} else {
+			rsm.setLast(toIndex.toString());
 		}
 		
 		return responseItems;

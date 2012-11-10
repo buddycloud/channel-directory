@@ -17,13 +17,31 @@ package com.buddycloud.channeldirectory.search.handler.common;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smackx.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.packet.DiscoverInfo;
+import org.jivesoftware.smackx.packet.DiscoverItems;
+import org.jivesoftware.smackx.packet.DiscoverInfo.Identity;
+import org.jivesoftware.smackx.packet.DiscoverItems.Item;
+import org.jivesoftware.smackx.pubsub.Node;
+import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.xmpp.packet.IQ;
 
+import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
+import com.buddycloud.channeldirectory.commons.solr.SolrUtils;
+import com.buddycloud.channeldirectory.crawler.node.MetaDataCrawler;
 import com.buddycloud.channeldirectory.search.handler.AbstractQueryHandler;
 import com.buddycloud.channeldirectory.search.handler.QueryHandler;
 import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
@@ -32,6 +50,7 @@ import com.buddycloud.channeldirectory.search.rsm.RSM;
 import com.buddycloud.channeldirectory.search.rsm.RSMUtils;
 import com.buddycloud.channeldirectory.search.utils.FeatureUtils;
 import com.buddycloud.channeldirectory.search.utils.GeolocationUtils;
+import com.buddycloud.channeldirectory.search.utils.XMPPUtils;
 
 /**
  * Abstract class for {@link QueryHandler} that returns
@@ -42,6 +61,7 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 
 	private static final DateFormat DATE_FORMAT = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ssZ");
+	private XMPPConnection connection;
 	
 	public ChannelQueryHandler(String namespace, Properties properties) {
 		super(namespace, properties);
@@ -88,5 +108,91 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 		RSMUtils.appendRSMElement(queryElement, rsm);
 		
 		return result;
+	}
+	
+	protected List<ChannelData> retrieveFromSolr(List<ChannelData> recommendedChannelsData) throws Exception {
+		SolrServer solrServer = SolrServerFactory.createChannelCore(getProperties());
+		List<ChannelData> channelsData = new LinkedList<ChannelData>();
+		for (ChannelData recommendedChannelData : recommendedChannelsData) {
+			SolrQuery solrQuery = new SolrQuery("jid:" + recommendedChannelData.getId());
+			QueryResponse queryResponse = solrServer.query(solrQuery);
+			ChannelData channelData = convertResponse(queryResponse);
+			if (channelData == null) {
+				channelData = retrieveFromPubSub(recommendedChannelData.getId());
+			}
+			if (channelData == null) {
+				channelData = recommendedChannelData;
+			}
+			channelsData.add(channelData);
+		}
+		return channelsData;
+	}
+	
+	private static ChannelData convertResponse(QueryResponse queryResponse) {
+		SolrDocumentList results = queryResponse.getResults();
+		if (results.isEmpty()) {
+			return null;
+		}
+		return SolrUtils.convertToChannelData(results.iterator().next());
+	}
+	
+	private ChannelData retrieveFromPubSub(String jid) {
+		try {
+			XMPPConnection connection = getConnection();
+			Node node = getNode(jid, connection);
+			if (node == null) {
+				return null;
+			}
+			return MetaDataCrawler.fetchAndUpdateMetadata(node, jid, getProperties());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	private XMPPConnection getConnection() throws Exception {
+		if (connection == null || !connection.isConnected()) {
+			connection = XMPPUtils.createCrawlerConnection(getProperties());
+		}
+		return connection;
+	}
+	
+	private Node getNode(String jid, XMPPConnection connection)
+			throws XMPPException {
+		String[] splitJid = jid.split("@");
+		String serverName = splitJid[1];
+		ServiceDiscoveryManager discovery = new ServiceDiscoveryManager(connection);
+		DiscoverItems discoverNodes = discovery.discoverItems(serverName);
+		Iterator<Item> items = discoverNodes.getItems();
+		
+		while (items.hasNext()) {
+			DiscoverItems.Item item = (DiscoverItems.Item) items.next();
+			try {
+				DiscoverInfo discoverInfo = discovery.discoverInfo(item.getEntityID());
+				Identity identity = discoverInfo.getIdentities().next();
+				if (identity.getCategory().equals("pubsub") && 
+						identity.getType().equals("service")) {
+					PubSubManager pubsubManager = new PubSubManager(connection, item.getEntityID());
+					Node node = getNode(jid, pubsubManager);
+					if (node != null) {
+						return node;
+					}
+				}
+			} catch (Exception e) {}
+		}
+		return null;
+	}
+	
+	private Node getNode(String jid, PubSubManager pubsubManager) {
+		Node node = null;
+		try {
+			node = pubsubManager.getNode("/user/" + jid + "/posts");	
+		} catch (Exception e) {}
+		
+		if (node == null) {
+			try {
+				node = pubsubManager.getNode("/topic/" + jid + "/posts");	
+			} catch (Exception e) {}
+		}
+		return node;
 	}
 }

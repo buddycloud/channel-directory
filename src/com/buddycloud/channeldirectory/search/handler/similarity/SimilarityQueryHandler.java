@@ -41,6 +41,7 @@ import com.buddycloud.channeldirectory.search.utils.XMPPUtils;
  */
 public class SimilarityQueryHandler extends ChannelQueryHandler {
 
+	private static final int DEFAULT_PAGE = 10;
 	private final ChannelRecommender recommender;
 
 	public SimilarityQueryHandler(Properties properties, ChannelRecommender recommender) {
@@ -67,16 +68,26 @@ public class SimilarityQueryHandler extends ChannelQueryHandler {
 		}
 		
 		RSM rsm = RSMUtils.parseRSM(queryElement);
-		List<ChannelData> recommendedChannels;
+		rsm.setMax(rsm.getMax() != null ? rsm.getMax() : DEFAULT_PAGE);
+		
+		List<ChannelData> similarChannels;
 		try {
-			recommendedChannels = findSimilarChannels(channelJid, rsm);
+			similarChannels = findSimilarChannels(channelJid, rsm);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, 
 					"Search could not be performed, service is unavailable.", 
 					e, getLogger());
 		}
 		
-		return createIQResponse(iq, recommendedChannels, rsm);
+		List<ChannelData> similarChannelsFullData;
+		try {
+			similarChannelsFullData = retrieveFromSolr(similarChannels);
+		} catch (Exception e) {
+			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
+					e, getLogger());
+		}
+		
+		return createIQResponse(iq, similarChannelsFullData, rsm);
 	}
 
 	private List<ChannelData> findSimilarChannels(String search, RSM rsm)
