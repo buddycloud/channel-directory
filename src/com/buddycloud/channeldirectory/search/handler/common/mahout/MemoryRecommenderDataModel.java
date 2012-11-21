@@ -129,7 +129,7 @@ public class MemoryRecommenderDataModel implements ChannelRecommenderDataModel {
 	}
 
 	@Override
-	public long toUserId(String userJid) {
+	public Long toUserId(String userJid) {
 		return userToId.get(userJid);
 	}
 
@@ -139,7 +139,7 @@ public class MemoryRecommenderDataModel implements ChannelRecommenderDataModel {
 	}
 
 	@Override
-	public long toChannelId(String channelJid) {
+	public Long toChannelId(String channelJid) {
 		return itemToId.get(channelJid);
 	}
 

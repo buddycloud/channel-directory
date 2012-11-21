@@ -79,7 +79,7 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 	}
 
 	@Override
-	public long toUserId(String userJid) {
+	public Long toUserId(String userJid) {
 		
 		PreparedStatement statement = null;
 		
@@ -90,11 +90,10 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 			statement.setString(1, userJid);
 
 			ResultSet resultSet = statement.executeQuery();
-			resultSet.next();
-
-			long userId = resultSet.getLong("id");
-
-			return userId;
+			if (resultSet.next()) {
+				return resultSet.getLong("id");
+			}
+			return null;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		} finally {
@@ -156,7 +155,7 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 	}
 
 	@Override
-	public long toChannelId(String channelJid) {
+	public Long toChannelId(String channelJid) {
 		
 		PreparedStatement statement = null;
 		
@@ -168,11 +167,11 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 			statement.setString(1, channelJid);
 
 			ResultSet resultSet = statement.executeQuery();
-			resultSet.next();
+			if (resultSet.next()) {
+				return resultSet.getLong("id");
+			}
 
-			long itemId = resultSet.getLong("id");
-
-			return itemId;
+			return null;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		} finally {

@@ -98,7 +98,11 @@ public class ChannelRecommender {
 	 */
 	public RecommendationResponse recommend(String userJid, int howMany)
 			throws TasteException, SQLException {
-		long userId = recommenderDataModel.toUserId(userJid);
+		Long userId = recommenderDataModel.toUserId(userJid);
+		
+		if (userId == null) {
+			return new RecommendationResponse(new LinkedList<ChannelData>(), 0);
+		}
 		
 		List<RecommendedItem> recommended = userRecommender.recommend(
 				userId, howMany);
@@ -127,7 +131,11 @@ public class ChannelRecommender {
 	public RecommendationResponse getSimilarChannels(String channelJid, int howMany)
 			throws TasteException, SQLException {
 		
-		long itemId = recommenderDataModel.toChannelId(channelJid);
+		Long itemId = recommenderDataModel.toChannelId(channelJid);
+		
+		if (itemId == null) {
+			return new RecommendationResponse(new LinkedList<ChannelData>(), 0);
+		}
 		
 		TopItems.Estimator<Long> estimator = new MostSimilarEstimator(
 				itemId, itemSimilarity, null);

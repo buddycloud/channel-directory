@@ -42,7 +42,7 @@ public interface ChannelRecommenderDataModel {
 	 * @param userJid
 	 * @return
 	 */
-	public long toUserId(String userJid);
+	public Long toUserId(String userJid);
 
 	/**
 	 * Given the Mahout long id for an item,
@@ -60,7 +60,7 @@ public interface ChannelRecommenderDataModel {
 	 * @param channelJid
 	 * @return
 	 */
-	public long toChannelId(String channelJid);
+	public Long toChannelId(String channelJid);
 
 	
 }
