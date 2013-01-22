@@ -136,9 +136,13 @@ public class ChannelDirectoryComponent extends AbstractComponent {
 		addHandler(new ContentQueryHandler(properties));
 		addHandler(new MostActiveQueryHandler(properties, dataSource));
 		
-		ChannelRecommender recommender = createRecommender(properties);
-		addHandler(new RecommendationQueryHandler(properties, recommender));
-		addHandler(new SimilarityQueryHandler(properties, recommender));
+		try {
+			ChannelRecommender recommender = createRecommender(properties);
+			addHandler(new RecommendationQueryHandler(properties, recommender));
+			addHandler(new SimilarityQueryHandler(properties, recommender));
+		} catch (Exception e) {
+			LOGGER.warn("Could not create mahout-related handlers.", e);
+		}
 	}
 	
 	private ChannelRecommender createRecommender(Properties properties) {
