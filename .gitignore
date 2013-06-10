@@ -3,4 +3,5 @@
 .project
 .classpath
 .*.swp
+configuration.properties
 .DS_Store
