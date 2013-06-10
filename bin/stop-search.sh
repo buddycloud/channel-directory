@@ -16,14 +16,18 @@
 # limitations under the License.
 
 # -----------------------------------------------------------------------------
-# Start script for the Channel Directory search engine
+# Stop script for the Channel Directory search engine
 # -----------------------------------------------------------------------------
 
-# Go to Search home and start it
-
 BIN_DIR=`dirname $0`
-BIN_DIR=`cd $BIN_DIR && pwd`
-cd "$BIN_DIR"/..
-java -cp .:./*:./lib/* com.buddycloud.channeldirectory.search.Main &
-echo $! > "$BIN_DIR"/search.pid
+SEARCH_PID=search.pid
+cd "$BIN_DIR"
+
+if [ ! -f $SEARCH_PID ]; then
+  echo PID file does not exist
+  exit 1
+fi
+
+kill `cat $SEARCH_PID`
+rm $SEARCH_PID
 exit 0
