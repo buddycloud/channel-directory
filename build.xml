@@ -27,7 +27,7 @@
 	</target>
 
 	<target name="package" depends="jar">
-
+                <copy file="configuration.properties.example" tofile="${target.dir}/configuration.properties"/>
 		<zip destfile="${target.dir}/${ant.project.name}.zip">
 			<fileset dir="." defaultexcludes="true">
 				<include name="lib/**"/>
@@ -36,13 +36,13 @@
 				<include name="bin/**"/>
 				<exclude name="resources/solr/multicore/channels/data/**"/>
 				<exclude name="resources/solr/multicore/posts/data/**"/>
-				<include name="configuration.properties"/>
 				<include name="LICENSE"/>
 				<include name="README"/>
 			</fileset>
 
 			<fileset dir="${target.dir}">
 				<include name="${ant.project.name}.jar"/>
+                                <include name="configuration.properties"/>
 			</fileset>
 
 			<fileset dir="${src.dir}">
