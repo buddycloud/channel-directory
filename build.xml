@@ -1,56 +1,54 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project basedir="." default="jar" name="channeldirectory">
-	<property name="target.dir" value="target" />
-	<property name="lib.dir" value="lib" />
-	<property name="classes.dir" value="${target.dir}/classes" />
-	<property name="src.dir" value="src" />
-	
-	<target name="clean">
-		<delete dir="${target.dir}"/>
-	</target>
+  <property name="target.dir" value="target" />
+  <property name="lib.dir" value="lib" />
+  <property name="classes.dir" value="${target.dir}/classes" />
+  <property name="src.dir" value="src" />
+  
+  <target name="clean">
+    <delete dir="${target.dir}"/>
+  </target>
 
-	<target name="compile" depends="clean">
-		<mkdir dir="${classes.dir}" />
-		<javac srcdir="src" destdir="${classes.dir}" debug="on">
-			<classpath>
-				<path id="lib.classpath">
-					<fileset dir="${lib.dir}">
-						<include name="**/*.jar" />
-					</fileset>
-				</path>
-			</classpath>
-		</javac>
-	</target>
+  <target name="compile" depends="clean">
+    <mkdir dir="${classes.dir}" />
+    <javac srcdir="src" destdir="${classes.dir}" debug="on">
+      <classpath>
+        <path id="lib.classpath">
+          <fileset dir="${lib.dir}">
+            <include name="**/*.jar" />
+          </fileset>
+        </path>
+      </classpath>
+    </javac>
+  </target>
 
-	<target name="jar" depends="compile">
-		<jar destfile="${target.dir}/${ant.project.name}.jar" basedir="${classes.dir}"/>
-	</target>
+  <target name="jar" depends="compile">
+    <jar destfile="${target.dir}/${ant.project.name}.jar" basedir="${classes.dir}"/>
+  </target>
 
-	<target name="package" depends="jar">
-                <copy file="configuration.properties.example" tofile="${target.dir}/configuration.properties"/>
-		<zip destfile="${target.dir}/${ant.project.name}.zip">
-			<fileset dir="." defaultexcludes="true">
-				<include name="lib/**"/>
-				<include name="resources/solr/**"/>
-				<include name="resources/schema/**"/>
-				<include name="bin/**"/>
-				<exclude name="resources/solr/multicore/channels/data/**"/>
-				<exclude name="resources/solr/multicore/posts/data/**"/>
-				<include name="LICENSE"/>
-				<include name="README"/>
-			</fileset>
+  <target name="package" depends="jar">
+    <copy file="configuration.properties.example" tofile="${target.dir}/configuration.properties"/>
+    <zip destfile="${target.dir}/${ant.project.name}.zip">
+      <fileset dir="." defaultexcludes="true">
+        <include name="lib/**"/>
+        <include name="resources/solr/**"/>
+        <include name="resources/schema/**"/>
+        <include name="bin/**"/>
+        <exclude name="resources/solr/multicore/channels/data/**"/>
+        <exclude name="resources/solr/multicore/posts/data/**"/>
+        <include name="LICENSE"/>
+        <include name="README"/>
+      </fileset>
 
-			<fileset dir="${target.dir}">
-				<include name="${ant.project.name}.jar"/>
-                                <include name="configuration.properties"/>
-			</fileset>
+      <fileset dir="${target.dir}">
+        <include name="${ant.project.name}.jar"/>
+        <include name="configuration.properties"/>
+      </fileset>
 
-			<fileset dir="${src.dir}">
-				<include name="log4j.properties" />
-			</fileset>
-
-		</zip>
-
-	</target>
+      <fileset dir="${src.dir}">
+        <include name="log4j.properties" />
+      </fileset>
+    </zip>
+  </target>
 
 </project>
