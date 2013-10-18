@@ -106,10 +106,13 @@ public class XMPPUtils {
 				host,
 				Integer.parseInt(configuration.getProperty("crawler.xmpp.port")),
 				serviceName);
+		cc.setReconnectionAllowed(true);
 		
 		XMPPConnection connection = new XMPPConnection(cc);
 		connection.connect();
-		connection.login(userName, configuration.getProperty("crawler.xmpp.password"), "crawler" + new Random().nextLong());
+		connection.login(userName, 
+				configuration.getProperty("crawler.xmpp.password"), 
+				"crawler" + new Random().nextLong());
 		
 		return connection;
 	}

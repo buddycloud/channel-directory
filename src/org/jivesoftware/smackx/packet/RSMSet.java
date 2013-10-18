@@ -160,11 +160,17 @@ public class RSMSet {
 				break;
 			} else if (eventType == XmlPullParser.START_TAG) {
 				if ("first".equals(parser.getName())) {
-					rsmSet.setIndex(Integer.parseInt(parser.getAttributeValue("", "index")));
+					String indexValue = parser.getAttributeValue("", "index");
+					if (indexValue != null) {
+						rsmSet.setIndex(Integer.parseInt(indexValue));
+					}
+					rsmSet.setFirst(parser.nextText());
 					readingFirst = true;
 				} else if ("last".equals(parser.getName())) {
+					rsmSet.setLast(parser.nextText());
 					readingLast = true;
 				} else if ("count".equals(parser.getName())) {
+					rsmSet.setCount(Integer.valueOf(parser.nextText()));
 					readingCount = true;
 				}
 			} else if (eventType == XmlPullParser.END_TAG) {

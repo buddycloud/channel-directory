@@ -25,6 +25,7 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.Connection;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smackx.packet.DiscoverItems;
 import org.jivesoftware.smackx.packet.DiscoverItems.Item;
@@ -49,6 +50,9 @@ import com.buddycloud.channeldirectory.crawler.node.PostCrawler;
 public class PubSubServerCrawler {
 
 	private static Logger LOGGER = Logger.getLogger(PubSubServerCrawler.class);
+	
+	private static final int RECONNECTION_INTERVAL = 30000;
+	private static final int RECONNECTION_RETRIES = 5;
 	private static long DEF_CRAWL_INTERVAL = 60000 * 30; // 30 minutes
 	
 	private final Properties configuration;
@@ -57,12 +61,15 @@ public class PubSubServerCrawler {
 	private final ChannelDirectoryDataSource dataSource;
 	
 	private List<NodeCrawler> nodeCrawlers;
+	private final XMPPConnection connection;
 	
 	public PubSubServerCrawler(Properties configuration, PubSubManagers managers, 
-			ChannelDirectoryDataSource dataSource, PubSubSubscriptionListener listener) {
+			ChannelDirectoryDataSource dataSource, XMPPConnection connection, 
+			PubSubSubscriptionListener listener) {
 		this.configuration = configuration;
 		this.managers = managers;
 		this.dataSource = dataSource;
+		this.connection = connection;
 		this.listener = listener;
 	}
 	
@@ -113,7 +120,13 @@ public class PubSubServerCrawler {
 		
 		for (String server : serversToCrawl) {
 			
+			LOGGER.debug("Discovering nodes on " + server);
+			waitForReconnection();
+			
 			PubSubManager manager = managers.getPubSubManager(server);
+			
+//			<iq id="j4lTh-4" to="channels.buddycloud.org" type="get"><query xmlns="http://jabber.org/protocol/disco#items"></query></iq>
+
 			DiscoverItems discoverInfo = null;
 			try {
 				discoverInfo = manager.discoverNodes(null);
@@ -121,6 +134,8 @@ public class PubSubServerCrawler {
 				LOGGER.warn("Could not fetch nodes from server [" + server + "]", e);
 				continue;
 			}
+			
+			LOGGER.debug("Subscribing to firehose on " + server);
 			
 			try {
 				Node firehoseNode = manager.getNode("firehose");
@@ -133,6 +148,8 @@ public class PubSubServerCrawler {
 				continue;
 			}
 			
+			LOGGER.debug("Crawling items on " + server);
+			
 			try {
 				fetchAndCrawl(discoverInfo, server, manager);
 			} catch (Exception e) {
@@ -142,16 +159,30 @@ public class PubSubServerCrawler {
 		}
 	}
 
+	private void waitForReconnection() {
+		int retries = RECONNECTION_RETRIES;
+		while (--retries > 0) {
+			if (connection.isConnected()) {
+				break;
+			}
+			try {
+				Thread.sleep(RECONNECTION_INTERVAL);
+			} catch (InterruptedException e) {}
+		}
+	}
+
 	private void crawl(List<NodeCrawler> nodeCrawlers, String server,
 			PubSubManager manager, Item item) {
-			
+		
+		waitForReconnection();
+		
 		Node node = null;
 		
 		try {
 			node = manager.getNode(item.getNode());
 		} catch (Exception e) {
-			LOGGER.warn("Could not read node [" + item.getNode() + "] "
-					+ "from server [" + server + "]", e);
+//			LOGGER.warn("Could not read node [" + item.getNode() + "] "
+//					+ "from server [" + server + "]", e);
 			return;
 		}
 

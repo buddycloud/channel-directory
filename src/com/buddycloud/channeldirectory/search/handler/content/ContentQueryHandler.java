@@ -77,7 +77,7 @@ public class ContentQueryHandler extends PostQueryHandler {
 			relatedPosts = findObjectsByContent(search, rsm);
 		} catch (Exception e) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
-					getLogger());
+					e, getLogger());
 		}
 		
 		return createIQResponse(iq, relatedPosts, rsm);

@@ -60,7 +60,8 @@ public class Main {
 		PubSubSubscriptionListener listener = new PubSubSubscriptionListener(
 				configuration, managers, dataSource);
 		
-		new PubSubServerCrawler(configuration, managers, dataSource, listener).start();
+		new PubSubServerCrawler(configuration, managers, 
+				dataSource, connection, listener).start();
 	}
 
 	private static void addTraceListeners(XMPPConnection connection) {
