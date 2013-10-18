@@ -22,7 +22,8 @@
 # Go to Solr home and start it
 
 BIN_DIR=`dirname $0`
+BIN_DIR=`cd $BIN_DIR && pwd`
 cd "$BIN_DIR"/../resources/solr
 java -Dsolr.solr.home=multicore -jar start.jar &
-
+echo $! > "$BIN_DIR"/solr.pid
 exit 0

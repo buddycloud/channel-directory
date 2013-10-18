@@ -22,7 +22,8 @@
 # Go to Search home and start the Crawler
 
 BIN_DIR=`dirname $0`
+BIN_DIR=`cd $BIN_DIR && pwd`
 cd "$BIN_DIR"/..
 java -cp .:./*:./lib/* com.buddycloud.channeldirectory.crawler.Main &
-
+echo $! > "$BIN_DIR"/crawler.pid
 exit 0

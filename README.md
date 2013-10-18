@@ -3,4 +3,7 @@ Apache 2.0 licensed
 The pub-sub search engine, metadata crawler and recommendation service. 
 
 http://buddycloud.org
+
+# Install
+
 http://buddycloud.org/wiki/Channel_Directory_Project
