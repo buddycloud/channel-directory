@@ -83,11 +83,20 @@ public class ActivityHelperTest extends HSQLDBTest {
 		Assert.assertEquals("whatever@whatever.com", 
 				resultSet.getString("channel_jid"));
 		
+		JsonArray allActivity = new JsonArray();
+		
 		JsonObject activityInThisHour = new JsonObject();
 		activityInThisHour.addProperty("p", postTimestampInHours);
 		activityInThisHour.addProperty("a", 1);
-		JsonArray allActivity = new JsonArray();
 		allActivity.add(activityInThisHour);
+		
+		for (int i = 1; i < ActivityHelper.MAX_WINDOW_SIZE; i++) {
+			JsonObject activity = new JsonObject();
+			activity.addProperty("p", postTimestampInHours - i);
+			activity.addProperty("a", 0);
+			allActivity.add(activity);
+		}
+		
 		Assert.assertEquals(allActivity.toString(), 
 				resultSet.getString("detailed_activity"));
 		
@@ -106,21 +115,18 @@ public class ActivityHelperTest extends HSQLDBTest {
 		long postTimestampInHours = 100;
 		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
 		
-		PostData oldPostData = new PostData();
-		oldPostData.setParentSimpleId("whatever@whatever.com");
-		oldPostData.setPublished(new Date(oldPostTimestamp));
-		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
-		
-		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
 		
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
 		newPostData.setPublished(new Date(oldPostTimestamp + 1));
-		
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
 		
+		PostData oldPostData = new PostData();
+		oldPostData.setParentSimpleId("whatever@whatever.com");
+		oldPostData.setPublished(new Date(oldPostTimestamp));
+		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
 		
 		Statement st = getDataSource().createStatement();
 		ResultSet resultSet = st.executeQuery("SELECT * FROM channel_activity");
@@ -129,14 +135,22 @@ public class ActivityHelperTest extends HSQLDBTest {
 		Assert.assertEquals("whatever@whatever.com", 
 				resultSet.getString("channel_jid"));
 		
+		JsonArray allActivity = new JsonArray();
+		
 		JsonObject activityInThisHour = new JsonObject();
 		activityInThisHour.addProperty("p", postTimestampInHours);
 		activityInThisHour.addProperty("a", 2);
-		JsonArray allActivity = new JsonArray();
 		allActivity.add(activityInThisHour);
+		
+		for (int i = 1; i < ActivityHelper.MAX_WINDOW_SIZE; i++) {
+			JsonObject activity = new JsonObject();
+			activity.addProperty("p", postTimestampInHours - i);
+			activity.addProperty("a", 0);
+			allActivity.add(activity);
+		}
+		
 		Assert.assertEquals(allActivity.toString(), 
 				resultSet.getString("detailed_activity"));
-		
 		Assert.assertEquals(2, 
 				resultSet.getLong("summarized_activity"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp + 1), 
@@ -152,20 +166,18 @@ public class ActivityHelperTest extends HSQLDBTest {
 		long postTimestampInHours = 100;
 		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
 		
-		PostData oldPostData = new PostData();
-		oldPostData.setParentSimpleId("whatever@whatever.com");
-		oldPostData.setPublished(new Date(oldPostTimestamp));
-		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
-		
-		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
 		
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
 		newPostData.setPublished(new Date(oldPostTimestamp + ONE_HOUR + 1));
-		
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
+		
+		PostData oldPostData = new PostData();
+		oldPostData.setParentSimpleId("whatever@whatever.com");
+		oldPostData.setPublished(new Date(oldPostTimestamp));
+		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
 		
 		Statement st = getDataSource().createStatement();
 		ResultSet resultSet = st.executeQuery("SELECT * FROM channel_activity");
@@ -174,20 +186,27 @@ public class ActivityHelperTest extends HSQLDBTest {
 		Assert.assertEquals("whatever@whatever.com", 
 				resultSet.getString("channel_jid"));
 		
+		JsonArray allActivity = new JsonArray();
+		
 		JsonObject activityInThisHour = new JsonObject();
 		activityInThisHour.addProperty("p", postTimestampInHours + 1);
 		activityInThisHour.addProperty("a", 1);
+		allActivity.add(activityInThisHour);
 		
 		JsonObject activityInLastHour = new JsonObject();
 		activityInLastHour.addProperty("p", postTimestampInHours);
 		activityInLastHour.addProperty("a", 1);
-		
-		JsonArray allActivity = new JsonArray();
-		allActivity.add(activityInThisHour);
 		allActivity.add(activityInLastHour);
+		
+		for (int i = 2; i < ActivityHelper.MAX_WINDOW_SIZE; i++) {
+			JsonObject activity = new JsonObject();
+			activity.addProperty("p", postTimestampInHours - i + 1);
+			activity.addProperty("a", 0);
+			allActivity.add(activity);
+		}
+		
 		Assert.assertEquals(allActivity.toString(), 
 				resultSet.getString("detailed_activity"));
-		
 		Assert.assertEquals(2, 
 				resultSet.getLong("summarized_activity"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp + ONE_HOUR + 1), 
@@ -203,22 +222,20 @@ public class ActivityHelperTest extends HSQLDBTest {
 		long postTimestampInHours = 100;
 		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
 		
-		PostData oldPostData = new PostData();
-		oldPostData.setParentSimpleId("whatever@whatever.com");
-		oldPostData.setPublished(new Date(oldPostTimestamp));
-		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
-		
-		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
 		
 		final int skippingHours = 5;
 		
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
 		newPostData.setPublished(new Date(oldPostTimestamp + skippingHours * ONE_HOUR + 1));
-		
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
+		
+		PostData oldPostData = new PostData();
+		oldPostData.setParentSimpleId("whatever@whatever.com");
+		oldPostData.setPublished(new Date(oldPostTimestamp));
+		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
 		
 		Statement st = getDataSource().createStatement();
 		ResultSet resultSet = st.executeQuery("SELECT * FROM channel_activity");
@@ -245,6 +262,13 @@ public class ActivityHelperTest extends HSQLDBTest {
 		activityInLastHour.addProperty("a", 1);
 		allActivity.add(activityInLastHour);
 		
+		for (int i = 1; i < ActivityHelper.MAX_WINDOW_SIZE - skippingHours; i++) {
+			JsonObject activity = new JsonObject();
+			activity.addProperty("p", postTimestampInHours - i);
+			activity.addProperty("a", 0);
+			allActivity.add(activity);
+		}
+		
 		Assert.assertEquals(allActivity.toString(), 
 				resultSet.getString("detailed_activity"));
 		
@@ -263,20 +287,19 @@ public class ActivityHelperTest extends HSQLDBTest {
 		long postTimestampInHours = 100;
 		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
 		
-		PostData oldPostData = new PostData();
-		oldPostData.setParentSimpleId("whatever@whatever.com");
-		oldPostData.setPublished(new Date(oldPostTimestamp));
-		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
 		
-		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
-		
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
-		newPostData.setPublished(new Date(oldPostTimestamp - 1));
-		
+		newPostData.setPublished(new Date(oldPostTimestamp + 
+				ActivityHelper.MAX_WINDOW_SIZE * ONE_HOUR));
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
+		
+		PostData oldPostData = new PostData();
+		oldPostData.setParentSimpleId("whatever@whatever.com");
+		oldPostData.setPublished(new Date(oldPostTimestamp));
+		ActivityHelper.updateActivity(oldPostData, getDataSource(), null, solrFactory);
 		
 		Statement st = getDataSource().createStatement();
 		ResultSet resultSet = st.executeQuery("SELECT * FROM channel_activity");
@@ -285,20 +308,29 @@ public class ActivityHelperTest extends HSQLDBTest {
 		Assert.assertEquals("whatever@whatever.com", 
 				resultSet.getString("channel_jid"));
 		
-		JsonObject activityInLastHour = new JsonObject();
-		activityInLastHour.addProperty("p", postTimestampInHours);
-		activityInLastHour.addProperty("a", 1);
-		
 		JsonArray allActivity = new JsonArray();
+		
+		JsonObject activityInLastHour = new JsonObject();
+		activityInLastHour.addProperty("p", postTimestampInHours + ActivityHelper.MAX_WINDOW_SIZE);
+		activityInLastHour.addProperty("a", 1);
 		allActivity.add(activityInLastHour);
+		
+		for (int i = 1; i < ActivityHelper.MAX_WINDOW_SIZE; i++) {
+			JsonObject activity = new JsonObject();
+			activity.addProperty("p", postTimestampInHours + ActivityHelper.MAX_WINDOW_SIZE - i);
+			activity.addProperty("a", 0);
+			allActivity.add(activity);
+		}
+		
 		Assert.assertEquals(allActivity.toString(), 
 				resultSet.getString("detailed_activity"));
-		
 		Assert.assertEquals(1, 
 				resultSet.getLong("summarized_activity"));
-		Assert.assertEquals(new Timestamp(oldPostTimestamp), 
+		Assert.assertEquals(new Timestamp(oldPostTimestamp + 
+				ActivityHelper.MAX_WINDOW_SIZE * ONE_HOUR), 
 				resultSet.getTimestamp("updated"));
-		Assert.assertEquals(new Timestamp(oldPostTimestamp), 
+		Assert.assertEquals(new Timestamp(oldPostTimestamp + 
+				ActivityHelper.MAX_WINDOW_SIZE * ONE_HOUR), 
 				resultSet.getTimestamp("earliest"));
 		
 		ChannelDirectoryDataSource.close(st);

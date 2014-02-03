@@ -41,13 +41,14 @@ import com.google.gson.JsonParser;
  */
 public class ActivityHelper {
 
+	protected static final int MAX_WINDOW_SIZE = 30;
+	
 	private static Logger LOGGER = Logger.getLogger(ActivityHelper.class);
 	
 	private static String PUBLISHED_LABEL = "p";
 	private static String ACTIVITY_LABEL = "a";
 	
 	private static final Long ONE_HOUR = 1000L * 60L * 60L;
-	private static final int MAX_WINDOW_SIZE = 30;
 	
 	public static void updateActivity(PostData postData, 
 			ChannelDirectoryDataSource dataSource, Properties properties) {
@@ -89,57 +90,52 @@ public class ActivityHelper {
 			return;
 		}
 		
-		JsonArray newChannelHistory = new JsonArray();
-		
 		long summarizedActivity = 0;
+		JsonObject[] channelHistory = new JsonObject[MAX_WINDOW_SIZE];
 		
-		boolean newActivity = true;
+		for (int i = 0; i < MAX_WINDOW_SIZE; i++) {
+			JsonObject activityobject = new JsonObject();
+			activityobject.addProperty(PUBLISHED_LABEL, thisPostPublishedInHours - i);
+			activityobject.addProperty(ACTIVITY_LABEL, 0);
+			channelHistory[i] = activityobject;
+		}
 		
 		if (oldChannelActivity != null) {
-			newActivity = false;
-			JsonArray oldChannelHistory = oldChannelActivity.activity;
+			JsonArray oldActivity = oldChannelActivity.activity;
 			
 			// Crawled already
-			if (postData.getPublished().compareTo(oldChannelActivity.updated) <= 0) {
+			long oldestActivity = oldActivity.get(
+					MAX_WINDOW_SIZE - 1).getAsJsonObject().get(PUBLISHED_LABEL).getAsLong();
+			if (thisPostPublishedInHours < oldestActivity) {
 				return;
 			}
 			
-			JsonObject lastActivityInWindow = oldChannelHistory.get(0).getAsJsonObject();
+			JsonObject lastActivityInWindow = oldActivity.get(0).getAsJsonObject();
 			long lastActivityPublishedInHours = lastActivityInWindow.get(PUBLISHED_LABEL).getAsLong();
 			int hoursToAppend = (int) (thisPostPublishedInHours - lastActivityPublishedInHours);
 			
-			for (int i = 0; i < hoursToAppend; i++) {
-				if (newChannelHistory.size() >= MAX_WINDOW_SIZE) {
-					break;
-				}
-				JsonObject activityObject = new JsonObject();
-				activityObject.addProperty(PUBLISHED_LABEL, thisPostPublishedInHours - i);
-				activityObject.addProperty(ACTIVITY_LABEL, 0);
-				newChannelHistory.add(activityObject);
-			}
+			int startingIndex = Math.max(hoursToAppend, 0);
 			
-			for (int i = 0; i < oldChannelHistory.size(); i++) {
-				if (newChannelHistory.size() >= MAX_WINDOW_SIZE) {
-					break;
-				}
-				JsonObject activityObject = oldChannelHistory.get(i).getAsJsonObject();
-				summarizedActivity += activityObject.get(ACTIVITY_LABEL).getAsLong();
-				newChannelHistory.add(activityObject);
+			for (int i = startingIndex; i < MAX_WINDOW_SIZE; i++) {
+				JsonObject oldActivityOnIdx = (JsonObject) oldActivity.get(i);
+				channelHistory[i] = oldActivityOnIdx;
 			}
-			
-		} else {
-			JsonObject activityobject = new JsonObject();
-			activityobject.addProperty(PUBLISHED_LABEL, thisPostPublishedInHours);
-			activityobject.addProperty(ACTIVITY_LABEL, 0);
-			newChannelHistory.add(activityobject);
 		}
-
-		// Update first activity
-		JsonObject firstActivity = newChannelHistory.get(0).getAsJsonObject();
-		firstActivity.addProperty(ACTIVITY_LABEL, firstActivity.get(ACTIVITY_LABEL).getAsLong() + 1);
-		summarizedActivity += 1;
 		
-		if (newActivity) {
+		JsonObject lastActivityInWindow = channelHistory[0].getAsJsonObject();
+		int thisIdx = (int) (lastActivityInWindow.get(
+				PUBLISHED_LABEL).getAsLong() - thisPostPublishedInHours);
+		long thisActivity = channelHistory[thisIdx].get(ACTIVITY_LABEL).getAsLong();
+		channelHistory[thisIdx].addProperty(ACTIVITY_LABEL, thisActivity + 1);
+
+		JsonArray newChannelHistory = new JsonArray();
+		for (int i = 0; i < MAX_WINDOW_SIZE; i++) {
+			JsonObject activityObject = channelHistory[i];
+			summarizedActivity += activityObject.get(ACTIVITY_LABEL).getAsLong();
+			newChannelHistory.add(activityObject);
+		}
+		
+		if (oldChannelActivity == null) {
 			insertActivityInDB(channelJid, newChannelHistory, summarizedActivity, 
 					postData.getPublished(), dataSource);
 		} else {
