@@ -111,7 +111,7 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 	}
 	
 	protected List<ChannelData> retrieveFromSolr(List<ChannelData> recommendedChannelsData) throws Exception {
-		SolrServer solrServer = SolrServerFactory.createChannelCore(getProperties());
+		SolrServer solrServer = new SolrServerFactory().createChannelCore(getProperties());
 		List<ChannelData> channelsData = new LinkedList<ChannelData>();
 		for (ChannelData recommendedChannelData : recommendedChannelsData) {
 			SolrQuery solrQuery = new SolrQuery("jid:" + recommendedChannelData.getId());

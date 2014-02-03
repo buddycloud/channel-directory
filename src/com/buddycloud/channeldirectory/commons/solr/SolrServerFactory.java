@@ -32,12 +32,12 @@ public class SolrServerFactory {
 		return new CommonsHttpSolrServer(solrChannelUrl);
 	}
 
-	public static SolrServer createChannelCore(Properties properties)
+	public SolrServer createChannelCore(Properties properties)
 			throws MalformedURLException {
 		return createSolrCore(properties, SOLR_CHANNELCORE_PROP);
 	}
 
-	public static SolrServer createPostCore(Properties properties)
+	public SolrServer createPostCore(Properties properties)
 			throws MalformedURLException {
 		return createSolrCore(properties, SOLR_POSTCORE_PROP);
 	}

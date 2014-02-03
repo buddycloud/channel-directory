@@ -97,7 +97,7 @@ public class NearbyQueryHandler extends ChannelQueryHandler {
 	}
 
 	private List<ChannelData> findNearbyObjects(double lat, double lng, RSM rsm) throws MalformedURLException, SolrServerException {
-		SolrServer solrServer = SolrServerFactory.createChannelCore(getProperties());
+		SolrServer solrServer = new SolrServerFactory().createChannelCore(getProperties());
 		SolrQuery solrQuery = new SolrQuery("*:*");
 		solrQuery.set("fq", "{!geofilt}");
 		solrQuery.set("sfield", "geoloc");

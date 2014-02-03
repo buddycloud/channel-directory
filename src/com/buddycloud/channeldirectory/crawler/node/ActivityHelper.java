@@ -47,7 +47,12 @@ public class ActivityHelper {
 	private static String ACTIVITY_LABEL = "a";
 	
 	private static final Long ONE_HOUR = 1000L * 60L * 60L;
-	private static final int DAY_IN_HOURS = 24;
+	private static final int MAX_WINDOW_SIZE = 30;
+	
+	public static void updateActivity(PostData postData, 
+			ChannelDirectoryDataSource dataSource, Properties properties) {
+		updateActivity(postData, dataSource, properties, new SolrServerFactory());
+	}
 	
 	/**
 	 * @param postData
@@ -56,12 +61,17 @@ public class ActivityHelper {
 	 * @throws ParseException 
 	 */
 	public static void updateActivity(PostData postData, 
-			ChannelDirectoryDataSource dataSource, Properties properties) {
+			ChannelDirectoryDataSource dataSource, Properties properties, 
+			SolrServerFactory solrFactory) {
+		
+		if (postData == null) {
+			throw new IllegalArgumentException("Post data can't be null.");
+		}
 		
 		String channelJid = postData.getParentSimpleId();
 		
 		try {
-			if (!isChannelRegistered(channelJid, properties)) {
+			if (!isChannelRegistered(channelJid, solrFactory, properties)) {
 				return;
 			}
 		} catch (Exception e1) {
@@ -88,33 +98,31 @@ public class ActivityHelper {
 		if (oldChannelActivity != null) {
 			newActivity = false;
 			JsonArray oldChannelHistory = oldChannelActivity.activity;
-			JsonObject firstActivityInWindow = oldChannelHistory.get(0).getAsJsonObject();
-			
-			long firstActivityPublishedInHours = firstActivityInWindow.get(PUBLISHED_LABEL).getAsLong();
-			int hoursToAppend = (int) (firstActivityPublishedInHours - thisPostPublishedInHours);
-			
-			// Too old
-			if (hoursToAppend + oldChannelHistory.size() >= DAY_IN_HOURS) {
-				return;
-			}
 			
 			// Crawled already
-			if (postData.getPublished().compareTo(oldChannelActivity.earliest) >= 0 && 
-					postData.getPublished().compareTo(oldChannelActivity.updated) <= 0) {
+			if (postData.getPublished().compareTo(oldChannelActivity.updated) <= 0) {
 				return;
 			}
+			
+			JsonObject lastActivityInWindow = oldChannelHistory.get(0).getAsJsonObject();
+			long lastActivityPublishedInHours = lastActivityInWindow.get(PUBLISHED_LABEL).getAsLong();
+			int hoursToAppend = (int) (thisPostPublishedInHours - lastActivityPublishedInHours);
 			
 			for (int i = 0; i < hoursToAppend; i++) {
 				JsonObject activityobject = new JsonObject();
-				activityobject.addProperty(PUBLISHED_LABEL, thisPostPublishedInHours + i);
+				activityobject.addProperty(PUBLISHED_LABEL, thisPostPublishedInHours - i);
 				activityobject.addProperty(ACTIVITY_LABEL, 0);
-				newChannelHistory.add(activityobject);
+				if (newChannelHistory.size() < MAX_WINDOW_SIZE) {
+					newChannelHistory.add(activityobject);
+				}
 			}
 			
 			for (int i = 0; i < oldChannelHistory.size(); i++) {
 				JsonObject activityObject = oldChannelHistory.get(i).getAsJsonObject();
 				summarizedActivity += activityObject.get(ACTIVITY_LABEL).getAsLong();
-				newChannelHistory.add(activityObject);
+				if (newChannelHistory.size() < MAX_WINDOW_SIZE) {
+					newChannelHistory.add(activityObject);
+				}
 			}
 			
 		} else {
@@ -123,7 +131,7 @@ public class ActivityHelper {
 			activityobject.addProperty(ACTIVITY_LABEL, 0);
 			newChannelHistory.add(activityobject);
 		}
-		
+
 		// Update first activity
 		JsonObject firstActivity = newChannelHistory.get(0).getAsJsonObject();
 		firstActivity.addProperty(ACTIVITY_LABEL, firstActivity.get(ACTIVITY_LABEL).getAsLong() + 1);
@@ -144,8 +152,8 @@ public class ActivityHelper {
 	 * @return
 	 */
 	private static boolean isChannelRegistered(String channelJid,
-			Properties properties) throws Exception {
-		SolrServer solrServer = SolrServerFactory.createChannelCore(properties);
+			SolrServerFactory solrFactory, Properties properties) throws Exception {
+		SolrServer solrServer = solrFactory.createChannelCore(properties);
 		SolrQuery solrQuery = new SolrQuery("jid:" + channelJid);
 		QueryResponse queryResponse = solrServer.query(solrQuery);
 		return !queryResponse.getResults().isEmpty();

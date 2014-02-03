@@ -85,7 +85,7 @@ public class ContentQueryHandler extends PostQueryHandler {
 
 	private List<PostData> findObjectsByContent(String search, RSM rsm)
 			throws MalformedURLException, SolrServerException {
-		SolrServer solrServer = SolrServerFactory.createPostCore(
+		SolrServer solrServer = new SolrServerFactory().createPostCore(
 				getProperties());
 		SolrQuery solrQuery = new SolrQuery(search);
 		solrQuery.setSortField("updated", ORDER.desc);

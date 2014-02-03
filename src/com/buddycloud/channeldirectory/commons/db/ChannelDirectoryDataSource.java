@@ -77,7 +77,8 @@ public class ChannelDirectoryDataSource {
 		dataSource.setInitialPoolSize(5);
 		dataSource.setMinPoolSize(5);
 		dataSource.setMaxPoolSize(10);
-		dataSource.setDriverClass("org.postgresql.Driver");
+		dataSource.setDriverClass(configuration.getProperty("mahout.jdbc.driver", 
+				"org.postgresql.Driver"));
 		dataSource.setJdbcUrl(configuration.getProperty("mahout.jdbc.url"));
 	}
 	

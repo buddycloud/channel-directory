@@ -183,7 +183,7 @@ public class PostCrawler implements NodeCrawler {
 			}
 		}
 		
-		SolrServer solrServer = SolrServerFactory.createPostCore(configuration);
+		SolrServer solrServer = new SolrServerFactory().createPostCore(configuration);
 		solrServer.add(postDocument);
 		solrServer.commit();
 	}

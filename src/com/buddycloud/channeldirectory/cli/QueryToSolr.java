@@ -44,9 +44,9 @@ public class QueryToSolr implements Query {
 		SolrServer solrServer = null;
 		
 		if (core.equals("posts")) {
-			solrServer = SolrServerFactory.createPostCore(configuration);
+			solrServer = new SolrServerFactory().createPostCore(configuration);
 		} else if (core.equals("channels")) {
-			solrServer = SolrServerFactory.createChannelCore(configuration);
+			solrServer = new SolrServerFactory().createChannelCore(configuration);
 		}
 		
 		SolrQuery solrQuery = new SolrQuery(q);

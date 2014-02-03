@@ -83,7 +83,7 @@ public class MetadataQueryHandler extends ChannelQueryHandler {
 	}
 
 	private List<ChannelData> findObjectsByMetadata(RSM rsm, String search) throws MalformedURLException, SolrServerException {
-		SolrServer solrServer = SolrServerFactory.createChannelCore(getProperties());
+		SolrServer solrServer = new SolrServerFactory().createChannelCore(getProperties());
 		SolrQuery solrQuery = new SolrQuery(search);
 		
 		SolrRSMUtils.preprocess(solrQuery, rsm);

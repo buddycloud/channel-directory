@@ -173,7 +173,7 @@ public class MetaDataCrawler implements NodeCrawler {
 		object.setField("default-affiliation", channelData.getDefaultAffiliation());
 		object.setField("channel-type", channelData.getChannelType()); //topic or personal
 		
-		SolrServer solrServer = SolrServerFactory.createChannelCore(configuration);
+		SolrServer solrServer = new SolrServerFactory().createChannelCore(configuration);
 		solrServer.add(object);
 		solrServer.commit();
 	}
