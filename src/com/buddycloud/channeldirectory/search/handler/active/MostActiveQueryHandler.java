@@ -44,7 +44,7 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 	 * 
 	 */
 	private static final int DEFAULT_PAGE = 10;
-	private static final int LOOK_BACK = 1; // In weeks
+	private static final int LOOK_BACK = 7; // In days
 	private final ChannelDirectoryDataSource dataSource;
 
 	public MostActiveQueryHandler(Properties properties, ChannelDirectoryDataSource dataSource) {
@@ -57,11 +57,17 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		
 		Element queryElement = iq.getElement().element("query");
 		
+		Element domainEl = queryElement.element("domain");
+		String domain = domainEl == null ? null : domainEl.getText();
+		
+		Element periodEl = queryElement.element("period");
+		int period = periodEl == null ? LOOK_BACK : Integer.parseInt(periodEl.getText());
+		
 		RSM rsm = RSMUtils.parseRSM(queryElement);
 		List<ChannelData> mostActiveChannels = null;
 		
 		try {
-			mostActiveChannels = retrieveMostActiveChannels(dataSource, rsm);
+			mostActiveChannels = retrieveMostActiveChannels(dataSource, period, domain, rsm);
 		} catch (SQLException e1) {
 			return XMPPUtils.error(iq, "Search could not be performed, service is unavailable.", 
 					getLogger());
@@ -80,7 +86,7 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 
 	private static List<ChannelData> retrieveMostActiveChannels(
 			ChannelDirectoryDataSource dataSource, 
-			RSM rsm) throws SQLException  {
+			int period, String domain, RSM rsm) throws SQLException  {
 		
 		Integer offset = rsm.getIndex() != null ? rsm.getIndex() : 0;
 		Integer limit = rsm.getMax() != null ? rsm.getMax() : DEFAULT_PAGE;
@@ -90,10 +96,12 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 		try {
 			statement = dataSource.prepareStatement(
 					"SELECT channel_jid, count(*) OVER() AS channel_count FROM channel_activity " +
-					"WHERE updated > now() - interval'" + LOOK_BACK + " weeks' " +
+					"WHERE updated > now() - ? * interval'1 day' AND channel_jid LIKE ? " +
 					"ORDER BY summarized_activity DESC " +
 					"LIMIT ? OFFSET ?", 
-					limit, offset);
+					period, domain == null ? "%" : "%" + domain, 
+							limit, offset);
+			
 			ResultSet resultSet = statement.executeQuery();
 			List<ChannelData> channelsData = new LinkedList<ChannelData>();
 			String lastChannelId = null;
