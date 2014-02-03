@@ -109,20 +109,22 @@ public class ActivityHelper {
 			int hoursToAppend = (int) (thisPostPublishedInHours - lastActivityPublishedInHours);
 			
 			for (int i = 0; i < hoursToAppend; i++) {
-				JsonObject activityobject = new JsonObject();
-				activityobject.addProperty(PUBLISHED_LABEL, thisPostPublishedInHours - i);
-				activityobject.addProperty(ACTIVITY_LABEL, 0);
-				if (newChannelHistory.size() < MAX_WINDOW_SIZE) {
-					newChannelHistory.add(activityobject);
+				if (newChannelHistory.size() >= MAX_WINDOW_SIZE) {
+					break;
 				}
+				JsonObject activityObject = new JsonObject();
+				activityObject.addProperty(PUBLISHED_LABEL, thisPostPublishedInHours - i);
+				activityObject.addProperty(ACTIVITY_LABEL, 0);
+				newChannelHistory.add(activityObject);
 			}
 			
 			for (int i = 0; i < oldChannelHistory.size(); i++) {
+				if (newChannelHistory.size() >= MAX_WINDOW_SIZE) {
+					break;
+				}
 				JsonObject activityObject = oldChannelHistory.get(i).getAsJsonObject();
 				summarizedActivity += activityObject.get(ACTIVITY_LABEL).getAsLong();
-				if (newChannelHistory.size() < MAX_WINDOW_SIZE) {
-					newChannelHistory.add(activityObject);
-				}
+				newChannelHistory.add(activityObject);
 			}
 			
 		} else {

@@ -44,7 +44,7 @@ public class MostActiveQueryHandler extends ChannelQueryHandler {
 	 * 
 	 */
 	private static final int DEFAULT_PAGE = 10;
-	private static final int LOOK_BACK = 4; // In weeks
+	private static final int LOOK_BACK = 1; // In weeks
 	private final ChannelDirectoryDataSource dataSource;
 
 	public MostActiveQueryHandler(Properties properties, ChannelDirectoryDataSource dataSource) {

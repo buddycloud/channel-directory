@@ -350,7 +350,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 		Assert.assertEquals(allActivity.toString(), 
 				resultSet.getString("detailed_activity"));
 		
-		Assert.assertEquals(2, 
+		Assert.assertEquals(1, 
 				resultSet.getLong("summarized_activity"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp + skippingHours * ONE_HOUR + 1), 
 				resultSet.getTimestamp("updated"));
