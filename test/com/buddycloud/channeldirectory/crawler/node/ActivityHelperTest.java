@@ -28,7 +28,7 @@ import com.google.gson.JsonObject;
 
 public class ActivityHelperTest extends HSQLDBTest {
 
-	private static final Long ONE_HOUR = 1000L * 60L * 60L;
+	private static final Long A_DAY = 24L * 60 * 60 * 1000;
 	
 	private SolrServerFactory solrFactory;
 	private SolrServer solrServer;
@@ -66,7 +66,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 	@Test
 	public void testChannelWithNoPreviousActivity() throws Exception {
 		long postTimestampInHours = 100;
-		long postTimestamp = ONE_HOUR * postTimestampInHours;
+		long postTimestamp = A_DAY * postTimestampInHours;
 		
 		PostData postData = new PostData();
 		postData.setParentSimpleId("whatever@whatever.com");
@@ -113,7 +113,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 	@Test
 	public void testChannelPreviousActivityInSameHour() throws Exception {
 		long postTimestampInHours = 100;
-		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
+		long oldPostTimestamp = A_DAY * postTimestampInHours;
 		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
@@ -164,14 +164,14 @@ public class ActivityHelperTest extends HSQLDBTest {
 	@Test
 	public void testChannelPreviousActivityInOtherHour() throws Exception {
 		long postTimestampInHours = 100;
-		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
+		long oldPostTimestamp = A_DAY * postTimestampInHours;
 		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
 		
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
-		newPostData.setPublished(new Date(oldPostTimestamp + ONE_HOUR + 1));
+		newPostData.setPublished(new Date(oldPostTimestamp + A_DAY + 1));
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
 		
 		PostData oldPostData = new PostData();
@@ -209,7 +209,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 				resultSet.getString("detailed_activity"));
 		Assert.assertEquals(2, 
 				resultSet.getLong("summarized_activity"));
-		Assert.assertEquals(new Timestamp(oldPostTimestamp + ONE_HOUR + 1), 
+		Assert.assertEquals(new Timestamp(oldPostTimestamp + A_DAY + 1), 
 				resultSet.getTimestamp("updated"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp), 
 				resultSet.getTimestamp("earliest"));
@@ -220,7 +220,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 	@Test
 	public void testChannelPreviousActivitySkippingHours() throws Exception {
 		long postTimestampInHours = 100;
-		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
+		long oldPostTimestamp = A_DAY * postTimestampInHours;
 		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
@@ -229,7 +229,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 		
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
-		newPostData.setPublished(new Date(oldPostTimestamp + skippingHours * ONE_HOUR + 1));
+		newPostData.setPublished(new Date(oldPostTimestamp + skippingHours * A_DAY + 1));
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
 		
 		PostData oldPostData = new PostData();
@@ -274,7 +274,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 		
 		Assert.assertEquals(2, 
 				resultSet.getLong("summarized_activity"));
-		Assert.assertEquals(new Timestamp(oldPostTimestamp + skippingHours * ONE_HOUR + 1), 
+		Assert.assertEquals(new Timestamp(oldPostTimestamp + skippingHours * A_DAY + 1), 
 				resultSet.getTimestamp("updated"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp), 
 				resultSet.getTimestamp("earliest"));
@@ -285,7 +285,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 	@Test
 	public void testChannelOutOfWindowBounds() throws Exception {
 		long postTimestampInHours = 100;
-		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
+		long oldPostTimestamp = A_DAY * postTimestampInHours;
 		
 		SolrDocumentList sdl = recordChannelSolrQuery();
 		sdl.add(new SolrDocument());
@@ -293,7 +293,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
 		newPostData.setPublished(new Date(oldPostTimestamp + 
-				ActivityHelper.MAX_WINDOW_SIZE * ONE_HOUR));
+				ActivityHelper.MAX_WINDOW_SIZE * A_DAY));
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
 		
 		PostData oldPostData = new PostData();
@@ -327,10 +327,10 @@ public class ActivityHelperTest extends HSQLDBTest {
 		Assert.assertEquals(1, 
 				resultSet.getLong("summarized_activity"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp + 
-				ActivityHelper.MAX_WINDOW_SIZE * ONE_HOUR), 
+				ActivityHelper.MAX_WINDOW_SIZE * A_DAY), 
 				resultSet.getTimestamp("updated"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp + 
-				ActivityHelper.MAX_WINDOW_SIZE * ONE_HOUR), 
+				ActivityHelper.MAX_WINDOW_SIZE * A_DAY), 
 				resultSet.getTimestamp("earliest"));
 		
 		ChannelDirectoryDataSource.close(st);
@@ -339,7 +339,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 	@Test
 	public void testChannelActivityWindowTruncation() throws Exception {
 		long postTimestampInHours = 100;
-		long oldPostTimestamp = ONE_HOUR * postTimestampInHours;
+		long oldPostTimestamp = A_DAY * postTimestampInHours;
 		
 		PostData oldPostData = new PostData();
 		oldPostData.setParentSimpleId("whatever@whatever.com");
@@ -355,7 +355,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 		
 		PostData newPostData = new PostData();
 		newPostData.setParentSimpleId("whatever@whatever.com");
-		newPostData.setPublished(new Date(oldPostTimestamp + skippingHours * ONE_HOUR + 1));
+		newPostData.setPublished(new Date(oldPostTimestamp + skippingHours * A_DAY + 1));
 		
 		ActivityHelper.updateActivity(newPostData, getDataSource(), null, solrFactory);
 		
@@ -384,7 +384,7 @@ public class ActivityHelperTest extends HSQLDBTest {
 		
 		Assert.assertEquals(1, 
 				resultSet.getLong("summarized_activity"));
-		Assert.assertEquals(new Timestamp(oldPostTimestamp + skippingHours * ONE_HOUR + 1), 
+		Assert.assertEquals(new Timestamp(oldPostTimestamp + skippingHours * A_DAY + 1), 
 				resultSet.getTimestamp("updated"));
 		Assert.assertEquals(new Timestamp(oldPostTimestamp), 
 				resultSet.getTimestamp("earliest"));

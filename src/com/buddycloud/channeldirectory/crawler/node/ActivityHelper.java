@@ -48,7 +48,7 @@ public class ActivityHelper {
 	private static String PUBLISHED_LABEL = "p";
 	private static String ACTIVITY_LABEL = "a";
 	
-	private static final Long ONE_HOUR = 1000L * 60L * 60L;
+	private static final Long A_DAY = 24L * 60 * 60 * 1000;
 	
 	public static void updateActivity(PostData postData, 
 			ChannelDirectoryDataSource dataSource, Properties properties) {
@@ -81,7 +81,7 @@ public class ActivityHelper {
 		}
 		
 		Long published = postData.getPublished().getTime();
-		long thisPostPublishedInHours = published / ONE_HOUR;
+		long thisPostPublishedInHours = published / A_DAY;
 		
 		ChannelActivity oldChannelActivity = null;
 		try {
