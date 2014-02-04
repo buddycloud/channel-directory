@@ -27,8 +27,6 @@ import org.apache.log4j.Logger;
 import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smackx.ServiceDiscoveryManager;
-import org.jivesoftware.smackx.packet.DiscoverInfo;
 import org.jivesoftware.smackx.packet.DiscoverItems;
 import org.jivesoftware.smackx.packet.DiscoverItems.Item;
 import org.jivesoftware.smackx.packet.RSMSet;
@@ -38,6 +36,7 @@ import org.jivesoftware.smackx.pubsub.packet.SyncPacketSend;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.crawler.node.CrawlerHelper;
+import com.buddycloud.channeldirectory.crawler.node.DiscoveryUtils;
 import com.buddycloud.channeldirectory.crawler.node.FollowerCrawler;
 import com.buddycloud.channeldirectory.crawler.node.MetaDataCrawler;
 import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
@@ -60,9 +59,6 @@ public class PubSubServerCrawler {
 	private final Properties configuration;
 	private final PubSubManagers managers;
 	private final ChannelDirectoryDataSource dataSource;
-	
-	private static final String IDENTITY_CATEGORY = "pubsub";
-    private static final String IDENTITY_TYPE = "channels";
 	
 	private List<NodeCrawler> nodeCrawlers;
 	private final XMPPConnection connection;
@@ -113,44 +109,6 @@ public class PubSubServerCrawler {
 		}
 	}
 
-	private List<String> discoverChannelServers(String domain) {
-		ServiceDiscoveryManager discoManager = ServiceDiscoveryManager.getInstanceFor(connection);
-		PubSubManager pubSubManager = new PubSubManager(connection, domain);
-		
-		List<String> channelServers = new LinkedList<String>();
-
-		DiscoverItems discoverItems = null;
-		try {
-			discoverItems = pubSubManager.discoverNodes(null);
-		} catch (XMPPException e) {
-			LOGGER.error("Error while trying to fetch domain " + domain
-					+ "node", e);
-			return channelServers;
-		}
-		Iterator<DiscoverItems.Item> items = discoverItems.getItems();
-		while (items.hasNext()) {
-			String entityID = items.next().getEntityID();
-			DiscoverInfo discoverInfo = null;
-			try {
-				discoverInfo = discoManager.discoverInfo(entityID);
-			} catch (XMPPException e) {
-				continue;
-			}
-			Iterator<DiscoverInfo.Identity> identities = discoverInfo
-					.getIdentities();
-			while (identities.hasNext()) {
-				if (isChannelServerIdentity(identities.next())) {
-					channelServers.add(entityID);
-				}
-			}
-		}
-		return channelServers;
-	}
-	
-	private boolean isChannelServerIdentity(DiscoverInfo.Identity identity) {
-        return identity.getCategory().equals(IDENTITY_CATEGORY) && identity.getType().equals(IDENTITY_TYPE);
-    }
-
 	private void fetch(List<NodeCrawler> nodeCrawlers) throws XMPPException {
 		List<String> domainsToCrawl = new LinkedList<String>();
 		try {
@@ -170,7 +128,7 @@ public class PubSubServerCrawler {
 			
 			// Crawling channel by channel
 			LOGGER.debug("Discovering channel server on " + domain);
-			List<String> channelServers = discoverChannelServers(domain);
+			List<String> channelServers = DiscoveryUtils.discoverChannelServers(connection, domain);
 			for (String channelServer : channelServers) {
 				fetchChannelServer(channelServer);
 			}
