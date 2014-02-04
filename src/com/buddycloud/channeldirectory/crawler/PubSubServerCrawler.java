@@ -130,12 +130,12 @@ public class PubSubServerCrawler {
 			LOGGER.debug("Discovering channel server on " + domain);
 			List<String> channelServers = DiscoveryUtils.discoverChannelServers(connection, domain);
 			for (String channelServer : channelServers) {
-				fetchChannelServer(channelServer);
+				crawlChannelServer(channelServer);
 			}
 		}
 	}
 
-	private void fetchChannelServer(String channelServer) {
+	private void crawlChannelServer(String channelServer) {
 		LOGGER.debug("Discovering nodes on " + channelServer);
 		waitForReconnection();
 		

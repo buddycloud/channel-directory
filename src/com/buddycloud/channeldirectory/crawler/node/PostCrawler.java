@@ -20,6 +20,7 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -30,6 +31,7 @@ import org.apache.solr.common.SolrInputDocument;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smackx.packet.RSMSet;
 import org.jivesoftware.smackx.pubsub.Item;
 import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
@@ -80,12 +82,26 @@ public class PostCrawler implements NodeCrawler {
 		
 		String nodeId = nodeFullJidSplitted[2];
 		
-		//TODO process posts using RSM
-		for (Item item : leafNode.getItems()) {
-			try {
-				processPost(nodeFullJid, nodeId, item);
-			} catch (Exception e) {
-				LOGGER.warn(e);
+		String lastItemId = null;
+		while (true) {
+			List<Item> items = null;
+			if (lastItemId == null) {
+				items = leafNode.getItems();
+			} else {
+				RSMSet rsmSet = new RSMSet();
+				rsmSet.setAfter(lastItemId);
+				items = leafNode.getItems(rsmSet);
+			}
+			if (items.isEmpty()) {
+				break;
+			}
+			for (Item item : items) {
+				lastItemId = item.getId();
+				try {
+					processPost(nodeFullJid, nodeId, item);
+				} catch (Exception e) {
+					LOGGER.warn(e);
+				}
 			}
 		}
 	}
