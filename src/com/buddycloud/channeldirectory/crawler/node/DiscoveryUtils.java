@@ -1,8 +1,6 @@
 package com.buddycloud.channeldirectory.crawler.node;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.XMPPConnection;
@@ -26,11 +24,11 @@ public class DiscoveryUtils {
     private static final String IDENTITY_TYPE = "channels";
 	private static final String SRV_PREFIX = "_buddycloud-server._tcp.";
 	
-    public static List<String> discoverChannelServers(XMPPConnection connection, String domain) {
+    public static String discoverChannelServer(XMPPConnection connection, String domain) {
     	try {
-    		List<String> channelServers = doDNSDiscovery(domain);
-			if (!channelServers.isEmpty()) {
-				return channelServers;
+    		String channelServer = doDNSDiscovery(domain);
+			if (channelServer != null) {
+				return channelServer;
 			}
 		} catch (Exception e) {
 			LOGGER.warn("No SRV records for " + domain + ", trying XMPP disco.");
@@ -40,43 +38,40 @@ public class DiscoveryUtils {
     		return doXMPPDiscovery(connection, domain);
     	} catch (Exception e) {
     		LOGGER.warn("No XMPP disco entries for " + domain + ", giving up.");
-    		return new LinkedList<String>();
+    		return null;
     	}
 	}
 
-	private static List<String> doDNSDiscovery(String domain) throws TextParseException {
+	private static String doDNSDiscovery(String domain) throws TextParseException {
 		Lookup lookup = new Lookup(SRV_PREFIX + domain, Type.SRV);
 		Record recs[] = lookup.run();
 		if (recs == null) {
 			throw new RuntimeException("Could not lookup domain.");
 		}
 
-		List<String> channelServers = new LinkedList<String>();
 		for (Record rec : recs) {
 			SRVRecord record = (SRVRecord) rec;
 			Name target = record.getTarget();
 			if (target != null) {
 				String targetStr = target.toString();
-				channelServers.add(targetStr.substring(0, targetStr.length() - 1));
+				return targetStr.substring(0, targetStr.length() - 1);
 			}
 		}
-		return channelServers;
+		return null;
 	}
 
-	private static List<String> doXMPPDiscovery(XMPPConnection connection,
+	private static String doXMPPDiscovery(XMPPConnection connection,
 			String domain) {
 		ServiceDiscoveryManager discoManager = ServiceDiscoveryManager.getInstanceFor(connection);
 		PubSubManager pubSubManager = new PubSubManager(connection, domain);
 		
-		List<String> channelServers = new LinkedList<String>();
-
 		DiscoverItems discoverItems = null;
 		try {
 			discoverItems = pubSubManager.discoverNodes(null);
 		} catch (XMPPException e) {
 			LOGGER.error("Error while trying to fetch domain " + domain
 					+ "node", e);
-			return channelServers;
+			return null;
 		}
 		Iterator<DiscoverItems.Item> items = discoverItems.getItems();
 		while (items.hasNext()) {
@@ -91,11 +86,11 @@ public class DiscoveryUtils {
 					.getIdentities();
 			while (identities.hasNext()) {
 				if (isChannelServerIdentity(identities.next())) {
-					channelServers.add(entityID);
+					return entityID;
 				}
 			}
 		}
-		return channelServers;
+		return null;
 	}
 	
 	private static boolean isChannelServerIdentity(DiscoverInfo.Identity identity) {

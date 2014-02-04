@@ -128,8 +128,8 @@ public class PubSubServerCrawler {
 			
 			// Crawling channel by channel
 			LOGGER.debug("Discovering channel server on " + domain);
-			List<String> channelServers = DiscoveryUtils.discoverChannelServers(connection, domain);
-			for (String channelServer : channelServers) {
+			String channelServer = DiscoveryUtils.discoverChannelServer(connection, domain);
+			if (channelServer != null) {
 				crawlChannelServer(channelServer);
 			}
 		}
