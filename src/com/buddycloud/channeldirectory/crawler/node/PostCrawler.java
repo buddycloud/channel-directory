@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
@@ -28,6 +29,7 @@ import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
+import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.jivesoftware.smack.packet.PacketExtension;
@@ -82,20 +84,31 @@ public class PostCrawler implements NodeCrawler {
 		
 		String nodeId = nodeFullJidSplitted[2];
 		
+		String afterItem = CrawlerHelper.getLastItemCrawled(
+				node, server, dataSource);
+				
 		String lastItemId = null;
+		String firstItemId = null;
+		
 		while (true) {
 			List<Item> items = null;
-			if (lastItemId == null) {
-				items = leafNode.getItems();
-			} else {
-				RSMSet rsmSet = new RSMSet();
+			RSMSet rsmSet = new RSMSet();
+			if (lastItemId != null) {
 				rsmSet.setAfter(lastItemId);
-				items = leafNode.getItems(rsmSet);
 			}
+			items = leafNode.getItems(rsmSet);
 			if (items.isEmpty()) {
 				break;
 			}
+			boolean alreadySeen = false;
 			for (Item item : items) {
+				if (item.getId().equals(afterItem)) {
+					alreadySeen = true;
+					break;
+				}
+				if (firstItemId == null) {
+					firstItemId = item.getId();
+				}
 				lastItemId = item.getId();
 				try {
 					processPost(nodeFullJid, nodeId, item);
@@ -103,13 +116,24 @@ public class PostCrawler implements NodeCrawler {
 					LOGGER.warn(e);
 				}
 			}
+			if (alreadySeen) {
+				break;
+			}
 		}
+		CrawlerHelper.updateLastItemCrawled(leafNode, 
+				firstItemId, server, dataSource);
+	}
+
+	private void processPost(String nodeFullJid, String nodeId, Item item)
+			throws Exception {
+		PostData postData = saveToSolr(nodeFullJid, nodeId, item);
+		ActivityHelper.updateActivity(postData, dataSource, configuration);
 	}
 
 	@SuppressWarnings("unchecked")
-	private void processPost(String nodeFullJid, String nodeId, Item item)
-			throws Exception {
-		
+	private PostData saveToSolr(String nodeFullJid, String nodeId, Item item)
+			throws DocumentException, ParseException, SolrServerException,
+			IOException {
 		PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
 		PacketExtension payload = payloadItem.getPayload();
 		
@@ -162,9 +186,8 @@ public class PostCrawler implements NodeCrawler {
 			String replyRef = inReplyToElement.attributeValue("ref");
 			postData.setInReplyTo(replyRef);
 		}
-		
 		insert(postData);
-		ActivityHelper.updateActivity(postData, dataSource, configuration);
+		return postData;
 	}
 
 	private void insert(PostData postData) throws SolrServerException,

@@ -92,7 +92,7 @@ public class CrawlerHelper {
 		
 	}
 	
-public static void insertNode(Node node, String server, ChannelDirectoryDataSource dataSource) {
+	public static void insertNode(Node node, String server, ChannelDirectoryDataSource dataSource) {
 		
 		if (isNodeSubscribed(node, server, dataSource)) {
 			return;
@@ -110,6 +110,53 @@ public static void insertNode(Node node, String server, ChannelDirectoryDataSour
 			ChannelDirectoryDataSource.close(statement);
 		}
 		
+	}
+	
+	public static void updateLastItemCrawled(Node node, String lastItemCrawled, 
+			String server, ChannelDirectoryDataSource dataSource) {
+		if (lastItemCrawled == null || 
+				!isNodeSubscribed(node, server, dataSource)) {
+			return;
+		}
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"UPDATE subscribed_node SET last_item_crawled = ? " +
+					"WHERE name = ? AND server = ?", 
+					lastItemCrawled, node.getId(), server);
+			statement.execute();
+		} catch (SQLException e1) {
+			LOGGER.error("Could not update last item crawled on " + 
+					node + " at " + server, e1);
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
+	}
+	
+	public static String getLastItemCrawled(Node node, String server, 
+			ChannelDirectoryDataSource dataSource) {
+		
+		if (!isNodeSubscribed(node, server, dataSource)) {
+			return null;
+		}
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"SELECT last_item_crawled FROM subscribed_node " +
+					"WHERE name = ? AND server = ?", 
+					node.getId(), server);
+			ResultSet resultSet = statement.executeQuery();
+			if (resultSet.next()) {
+				return resultSet.getString("last_item_crawled");
+			}
+			return null;
+		} catch (SQLException e1) {
+			LOGGER.error("Could not retrieve last item crawled from " + 
+					node + " at " + server, e1);
+			return null;
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
 	}
 	
 	private static boolean isNodeSubscribed(Node node, String server, ChannelDirectoryDataSource dataSource) {

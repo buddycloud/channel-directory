@@ -1,0 +1,1 @@
+ALTER TABLE subscribed_node ADD last_item_crawled VARCHAR(300);
