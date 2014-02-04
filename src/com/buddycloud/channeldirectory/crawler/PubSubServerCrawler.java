@@ -27,6 +27,8 @@ import org.apache.log4j.Logger;
 import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smackx.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.packet.DiscoverInfo;
 import org.jivesoftware.smackx.packet.DiscoverItems;
 import org.jivesoftware.smackx.packet.DiscoverItems.Item;
 import org.jivesoftware.smackx.packet.RSMSet;
@@ -57,8 +59,10 @@ public class PubSubServerCrawler {
 	
 	private final Properties configuration;
 	private final PubSubManagers managers;
-	private final PubSubSubscriptionListener listener;
 	private final ChannelDirectoryDataSource dataSource;
+	
+	private static final String IDENTITY_CATEGORY = "pubsub";
+    private static final String IDENTITY_TYPE = "channels";
 	
 	private List<NodeCrawler> nodeCrawlers;
 	private final XMPPConnection connection;
@@ -70,7 +74,6 @@ public class PubSubServerCrawler {
 		this.managers = managers;
 		this.dataSource = dataSource;
 		this.connection = connection;
-		this.listener = listener;
 	}
 	
 	public void start() {
@@ -110,52 +113,91 @@ public class PubSubServerCrawler {
 		}
 	}
 
-	private void fetch(List<NodeCrawler> nodeCrawlers) throws XMPPException {
-		List<String> serversToCrawl = new LinkedList<String>();
+	private List<String> discoverChannelServers(String domain) {
+		ServiceDiscoveryManager discoManager = ServiceDiscoveryManager.getInstanceFor(connection);
+		PubSubManager pubSubManager = new PubSubManager(connection, domain);
+		
+		List<String> channelServers = new LinkedList<String>();
+
+		DiscoverItems discoverItems = null;
 		try {
-			serversToCrawl = retrieveServers();
+			discoverItems = pubSubManager.discoverNodes(null);
+		} catch (XMPPException e) {
+			LOGGER.error("Error while trying to fetch domain " + domain
+					+ "node", e);
+			return channelServers;
+		}
+		Iterator<DiscoverItems.Item> items = discoverItems.getItems();
+		while (items.hasNext()) {
+			String entityID = items.next().getEntityID();
+			DiscoverInfo discoverInfo = null;
+			try {
+				discoverInfo = discoManager.discoverInfo(entityID);
+			} catch (XMPPException e) {
+				continue;
+			}
+			Iterator<DiscoverInfo.Identity> identities = discoverInfo
+					.getIdentities();
+			while (identities.hasNext()) {
+				if (isChannelServerIdentity(identities.next())) {
+					channelServers.add(entityID);
+				}
+			}
+		}
+		return channelServers;
+	}
+	
+	private boolean isChannelServerIdentity(DiscoverInfo.Identity identity) {
+        return identity.getCategory().equals(IDENTITY_CATEGORY) && identity.getType().equals(IDENTITY_TYPE);
+    }
+
+	private void fetch(List<NodeCrawler> nodeCrawlers) throws XMPPException {
+		List<String> domainsToCrawl = new LinkedList<String>();
+		try {
+			domainsToCrawl = retrieveServers();
 		} catch (SQLException e1) {
 			LOGGER.error(e1);
 		}
 		
-		for (String server : serversToCrawl) {
+		for (String domain : domainsToCrawl) {
+			// Crawling firehose
+			LOGGER.debug("MAM'ing firehose on " + domain);
+			try {
+				//TODO Crawl firehose using MAM
+			} catch (Exception e) {
+				LOGGER.warn("Could not subscribe to firehose node on domain [" + domain + "]", e);
+			}
 			
-			LOGGER.debug("Discovering nodes on " + server);
-			waitForReconnection();
-			
-			PubSubManager manager = managers.getPubSubManager(server);
-			
-//			<iq id="j4lTh-4" to="channels.buddycloud.org" type="get"><query xmlns="http://jabber.org/protocol/disco#items"></query></iq>
+			// Crawling channel by channel
+			LOGGER.debug("Discovering channel server on " + domain);
+			List<String> channelServers = discoverChannelServers(domain);
+			for (String channelServer : channelServers) {
+				fetchChannelServer(channelServer);
+			}
+		}
+	}
 
-			DiscoverItems discoverInfo = null;
-			try {
-				discoverInfo = manager.discoverNodes(null);
-			} catch (Exception e) {
-				LOGGER.warn("Could not fetch nodes from server [" + server + "]", e);
-				continue;
-			}
-			
-			LOGGER.debug("Subscribing to firehose on " + server);
-			
-			try {
-				Node firehoseNode = manager.getNode("firehose");
-				listener.listen(firehoseNode, server);
-			} catch (Exception e) {
-				LOGGER.warn("Could not subscribe to firehose node from server [" + server + "]", e);
-			}
-			
-			if (discoverInfo == null) {
-				continue;
-			}
-			
-			LOGGER.debug("Crawling items on " + server);
-			
-			try {
-				fetchAndCrawl(discoverInfo, server, manager);
-			} catch (Exception e) {
-				LOGGER.warn("Could not crawls nodes from server [" + server + "]", e);
-			}
-			
+	private void fetchChannelServer(String channelServer) {
+		LOGGER.debug("Discovering nodes on " + channelServer);
+		waitForReconnection();
+		
+		PubSubManager manager = managers.getPubSubManager(channelServer);
+		DiscoverItems discoverInfo = null;
+		try {
+			discoverInfo = manager.discoverNodes(null);
+		} catch (Exception e) {
+			LOGGER.warn("Could not fetch nodes from server [" + channelServer + "]", e);
+			return;
+		}
+		if (discoverInfo == null) {
+			return;
+		}
+		
+		LOGGER.debug("Crawling items on " + channelServer);
+		try {
+			fetchAndCrawl(discoverInfo, channelServer, manager);
+		} catch (Exception e) {
+			LOGGER.warn("Could not crawls nodes from server [" + channelServer + "]", e);
 		}
 	}
 
@@ -172,17 +214,17 @@ public class PubSubServerCrawler {
 	}
 
 	private void crawl(List<NodeCrawler> nodeCrawlers, String server,
-			PubSubManager manager, Item item) {
+			PubSubManager manager, Item nodeItem) {
 		
 		waitForReconnection();
 		
 		Node node = null;
 		
 		try {
-			node = manager.getNode(item.getNode());
+			node = manager.getNode(nodeItem.getNode());
 		} catch (Exception e) {
-//			LOGGER.warn("Could not read node [" + item.getNode() + "] "
-//					+ "from server [" + server + "]", e);
+			LOGGER.warn("Could not read node [" + nodeItem.getNode() + "] "
+					+ "from server [" + server + "]", e);
 			return;
 		}
 
@@ -194,7 +236,7 @@ public class PubSubServerCrawler {
 					nodeCrawler.crawl(node, server);
 				}
 			} catch (Exception e) {
-				LOGGER.warn("Could not crawl node [" + item.getNode() + "] "
+				LOGGER.warn("Could not crawl node [" + nodeItem.getNode() + "] "
 						+ "from server [" + server + "]", e);
 			}
 		}
@@ -251,13 +293,11 @@ public class PubSubServerCrawler {
 		ResultSet resultSet = statement.executeQuery("SELECT * FROM subscribed_server");
 		
 		List<String> serversToCrawl = new LinkedList<String>();
-		
 		while (resultSet.next()) {
 			serversToCrawl.add(resultSet.getString("name"));
 		}
 		
 		ChannelDirectoryDataSource.close(statement);
-		
 		return serversToCrawl;
 	}
 
@@ -268,11 +308,9 @@ public class PubSubServerCrawler {
 	private void insertServers() throws SQLException {
 		String serversToCrawlStr = configuration.getProperty("crawler.servertocrawl");
 		String[] serversToCrawl = serversToCrawlStr.split(";");
-		
 		for (String server : serversToCrawl) {
 			CrawlerHelper.insertServer(server, dataSource);
 		}
-		
 	}
 
 }

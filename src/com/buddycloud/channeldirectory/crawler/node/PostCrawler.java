@@ -80,6 +80,7 @@ public class PostCrawler implements NodeCrawler {
 		
 		String nodeId = nodeFullJidSplitted[2];
 		
+		//TODO process posts using RSM
 		for (Item item : leafNode.getItems()) {
 			try {
 				processPost(nodeFullJid, nodeId, item);

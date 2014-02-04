@@ -37,10 +37,8 @@ public class CrawlerHelper {
 	 */
 	public static void enqueueNewServer(String user, 
 			ChannelDirectoryDataSource dataSource) {
-		
 		String server = user.substring(user.indexOf('@') + 1);
 		insertServer(server, dataSource);
-		
 	}
 
 	public static String getNodeId(String nodeFullJid) {
