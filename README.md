@@ -1,9 +1,19 @@
-Apache 2.0 licensed
+A channel search engine, metadata crawler and content recommendation service.
 
-The pub-sub search engine, metadata crawler and recommendation service. 
+The channel Directory project comprises three areas:
 
-http://buddycloud.org
+Gathering
+- spidering open channels for content and followers
+- receiving posts via a firehose
 
-# Install
+Searching
+- Finding nearby content
+- Searching channel metadata
+- Searching channel content
 
-http://buddycloud.org/wiki/Channel_Directory_Project
+Recommending
+- show me channels similar to this one
+- based on the channels I follow, recommend more
+
+(c) Buddycloud. 
+Apache 2.0 license.
