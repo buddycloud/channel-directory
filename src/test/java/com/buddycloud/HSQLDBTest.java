@@ -26,6 +26,7 @@ public class HSQLDBTest {
 		this.dataSource = new ChannelDirectoryDataSource(p);
 		
 		runBatch("resources/schema/create-schema.sql");
+		runBatch("resources/schema/update-schema-0.sql");
 	}
 
 	@After
