@@ -15,12 +15,21 @@
  */
 package com.buddycloud.channeldirectory.search.utils;
 
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.Random;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.PacketError;
 import org.xmpp.packet.PacketError.Condition;
@@ -107,14 +116,46 @@ public class XMPPUtils {
 				Integer.parseInt(configuration.getProperty("crawler.xmpp.port")),
 				serviceName);
 		cc.setReconnectionAllowed(true);
-		cc.setSASLAuthenticationEnabled(true);
+		cc.setHostnameVerifier(new HostnameVerifier() {
+			@Override
+			public boolean verify(String hostname, SSLSession session) {
+				return true;
+			}
+		});
+		SSLContext sc = SSLContext.getInstance("SSL");
+		sc.init(null, new TrustManager[]{createTrustAllManager()}, new java.security.SecureRandom());
+		cc.setCustomSSLContext(sc);
 		
-		XMPPConnection connection = new XMPPConnection(cc);
+		XMPPTCPConnection connection = new XMPPTCPConnection(cc);
 		connection.connect();
+		connection.setPacketReplyTimeout(10000L);
 		connection.login(userName, 
 				configuration.getProperty("crawler.xmpp.password"), 
 				"crawler-" + new Random().nextLong());
 		
 		return connection;
+	}
+
+	private static TrustManager createTrustAllManager() {
+		TrustManager tm = new X509TrustManager() {
+			
+			@Override
+			public X509Certificate[] getAcceptedIssuers() {
+				return null;
+			}
+			
+			@Override
+			public void checkServerTrusted(X509Certificate[] arg0, String arg1)
+					throws CertificateException {
+				
+			}
+			
+			@Override
+			public void checkClientTrusted(X509Certificate[] arg0, String arg1)
+					throws CertificateException {
+				
+			}
+		};
+		return tm;
 	}
 }

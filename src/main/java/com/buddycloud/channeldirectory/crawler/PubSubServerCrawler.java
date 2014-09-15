@@ -18,21 +18,17 @@ package com.buddycloud.channeldirectory.crawler;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smackx.packet.DiscoverItems;
-import org.jivesoftware.smackx.packet.DiscoverItems.Item;
-import org.jivesoftware.smackx.packet.RSMSet;
-import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.PubSubManager;
-import org.jivesoftware.smackx.pubsub.packet.SyncPacketSend;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems;
+import org.jivesoftware.smackx.pubsub.BuddycloudNode;
+import org.jivesoftware.smackx.pubsub.BuddycloudPubsubManager;
+import org.jivesoftware.smackx.rsm.packet.RSMSet;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.crawler.node.CrawlerHelper;
@@ -139,7 +135,7 @@ public class PubSubServerCrawler {
 		LOGGER.debug("Discovering nodes on " + channelServer);
 		waitForReconnection();
 		
-		PubSubManager manager = managers.getPubSubManager(channelServer);
+		BuddycloudPubsubManager manager = managers.getPubSubManager(channelServer);
 		DiscoverItems discoverInfo = null;
 		try {
 			discoverInfo = manager.discoverNodes(null);
@@ -172,11 +168,11 @@ public class PubSubServerCrawler {
 	}
 
 	private void crawl(List<NodeCrawler> nodeCrawlers, String server,
-			PubSubManager manager, Item nodeItem) {
+			BuddycloudPubsubManager manager, DiscoverItems.Item nodeItem) {
 		
 		waitForReconnection();
 		
-		Node node = null;
+		BuddycloudNode node = null;
 		
 		try {
 			node = manager.getNode(nodeItem.getNode());
@@ -209,34 +205,41 @@ public class PubSubServerCrawler {
 	 * @throws XMPPException 
 	 */
 	private void fetchAndCrawl(DiscoverItems discoverInfo, 
-			String server, PubSubManager manager) throws XMPPException {
+			String server, BuddycloudPubsubManager manager) throws XMPPException {
 		
 		int itemCount = 0;
 		
-		Connection connection = managers.getConnection();
+		XMPPConnection connection = managers.getConnection();
 		
 		while (true) {
 			
-			Iterator<Item> itemIterator = discoverInfo.getItems();
+			List<DiscoverItems.Item> serverItems = discoverInfo.getItems();
 			
-			while (itemIterator.hasNext()) {
-				crawl(nodeCrawlers, server, manager, itemIterator.next());
+			for (DiscoverItems.Item item : serverItems) {
+				crawl(nodeCrawlers, server, manager, item);
 				itemCount++;
 			}
 			
-			if (discoverInfo.getRsmSet() == null || 
-					itemCount == discoverInfo.getRsmSet().getCount()) {
+			RSMSet rsmSet = (RSMSet) discoverInfo.getExtension(RSMSet.NAMESPACE);
+			
+			if (rsmSet == null || 
+					itemCount == rsmSet.getCount()) {
 				break;
 			}
 			
 			DiscoverItems request = new DiscoverItems();
 			request.setTo(discoverInfo.getFrom());
 			
-			RSMSet rsmSet = new RSMSet();
-			rsmSet.setAfter(discoverInfo.getRsmSet().getLast());
-			request.setRsmSet(rsmSet);
+			RSMSet nexRsmSet = new RSMSet(
+					rsmSet.getLast(), null, -1, -1, null, -1, null, -1);
+			request.addExtension(nexRsmSet);
 			
-			discoverInfo = (DiscoverItems) SyncPacketSend.getReply(connection, request);
+			try {
+				discoverInfo = (DiscoverItems) connection
+						.createPacketCollectorAndSend(request).nextResultOrThrow();
+			} catch (Exception e) {
+				break;
+			}
 		}
 		
 	}

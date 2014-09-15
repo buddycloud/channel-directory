@@ -20,7 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
-import org.jivesoftware.smackx.pubsub.Node;
+import org.jivesoftware.smackx.pubsub.BuddycloudNode;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 
@@ -92,7 +92,7 @@ public class CrawlerHelper {
 		
 	}
 	
-	public static void insertNode(Node node, String server, ChannelDirectoryDataSource dataSource) {
+	public static void insertNode(BuddycloudNode node, String server, ChannelDirectoryDataSource dataSource) {
 		
 		if (isNodeSubscribed(node, server, dataSource)) {
 			return;
@@ -112,7 +112,7 @@ public class CrawlerHelper {
 		
 	}
 	
-	public static void updateLastItemCrawled(Node node, String lastItemCrawled, 
+	public static void updateLastItemCrawled(BuddycloudNode node, String lastItemCrawled, 
 			String server, ChannelDirectoryDataSource dataSource) {
 		if (lastItemCrawled == null || 
 				!isNodeSubscribed(node, server, dataSource)) {
@@ -133,7 +133,7 @@ public class CrawlerHelper {
 		}
 	}
 	
-	public static String getLastItemCrawled(Node node, String server, 
+	public static String getLastItemCrawled(BuddycloudNode node, String server, 
 			ChannelDirectoryDataSource dataSource) {
 		
 		if (!isNodeSubscribed(node, server, dataSource)) {
@@ -159,7 +159,7 @@ public class CrawlerHelper {
 		}
 	}
 	
-	private static boolean isNodeSubscribed(Node node, String server, ChannelDirectoryDataSource dataSource) {
+	private static boolean isNodeSubscribed(BuddycloudNode node, String server, ChannelDirectoryDataSource dataSource) {
 		
 		PreparedStatement statement = null;
 		try {
