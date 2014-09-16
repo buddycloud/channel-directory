@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.util.PacketUtil;
 import org.jivesoftware.smackx.pubsub.BuddycloudAffiliation;
 import org.jivesoftware.smackx.pubsub.BuddycloudNode;
 import org.jivesoftware.smackx.pubsub.Node;
@@ -215,7 +216,8 @@ public class FollowerCrawler implements NodeCrawler {
 			
 			nodeAffiliations.addAll(nodeAffiliations);
 			
-			RSMSet returnedRsmSet = getRSMSet(returnedExtensions);
+			RSMSet returnedRsmSet = PacketUtil.packetExtensionfromCollection(
+					returnedExtensions, RSMSet.ELEMENT, RSMSet.NAMESPACE);
 			
 			if (returnedRsmSet == null || 
 					nodeAffiliations.size() == returnedRsmSet.getCount()) {
@@ -228,14 +230,4 @@ public class FollowerCrawler implements NodeCrawler {
 		
 		return affiliations;
 	}
-
-	private RSMSet getRSMSet(List<PacketExtension> returnedExtensions) {
-		for (PacketExtension extension : returnedExtensions) {
-			if (extension.getNamespace().equals(RSMSet.NAMESPACE)) {
-				return (RSMSet) extension;
-			}
-		}
-		return null;
-	}
-	
 }
