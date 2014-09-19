@@ -27,9 +27,13 @@ public class BuddycloudPubsubManager {
 	}
 	
 	private final PubSubManager manager;
+	private XMPPConnection connection;
+	private final String toAddress;
 	
 	public BuddycloudPubsubManager(XMPPConnection connection, String toAddress) {
 		this.manager = new PubSubManager(connection, toAddress);
+		this.connection = connection;
+		this.toAddress = toAddress;
 	}
 
 	public BuddycloudNode getNode(String id) throws NoResponseException,
@@ -41,5 +45,11 @@ public class BuddycloudPubsubManager {
 			throws NoResponseException, XMPPErrorException,
 			NotConnectedException {
 		return manager.discoverNodes(nodeId);
+	}
+
+	public BuddycloudNode getFirehoseNode() {
+		BuddycloudFirehoseNode firehose = new BuddycloudFirehoseNode(connection);
+		firehose.setTo(toAddress);
+		return new BuddycloudNode(firehose);
 	}
 }

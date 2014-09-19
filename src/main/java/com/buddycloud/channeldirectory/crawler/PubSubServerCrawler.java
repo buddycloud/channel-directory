@@ -86,9 +86,7 @@ public class PubSubServerCrawler {
 		long crawlInterval = crawlIntervalStr == null ? DEF_CRAWL_INTERVAL
 				: Long.parseLong(crawlIntervalStr);
 		
-		
 		while (true) {
-			
 			try {
 				fetch(nodeCrawlers);
 				LOGGER.debug("Fetched all nodes, going to sleep.");
@@ -101,7 +99,6 @@ public class PubSubServerCrawler {
 			} catch (InterruptedException e) {
 				LOGGER.error(e);
 			}
-			
 		}
 	}
 
@@ -114,15 +111,6 @@ public class PubSubServerCrawler {
 		}
 		
 		for (String domain : domainsToCrawl) {
-			// Crawling firehose
-			LOGGER.debug("MAM'ing firehose on " + domain);
-			try {
-				//TODO Crawl firehose using MAM
-			} catch (Exception e) {
-				LOGGER.warn("Could not subscribe to firehose node on domain [" + domain + "]", e);
-			}
-			
-			// Crawling channel by channel
 			LOGGER.debug("Discovering channel server on " + domain);
 			String channelServer = DiscoveryUtils.discoverChannelServer(connection, domain);
 			if (channelServer != null) {
@@ -136,6 +124,15 @@ public class PubSubServerCrawler {
 		waitForReconnection();
 		
 		BuddycloudPubsubManager manager = managers.getPubSubManager(channelServer);
+		
+		// Crawling firehose
+		LOGGER.debug("Crawling firehose node on " + channelServer);
+		try {
+			crawl(nodeCrawlers, channelServer, manager.getFirehoseNode());
+		} catch (Exception e) {
+			LOGGER.warn("Could not crawl firehose node on [" + channelServer + "]", e);
+		}
+		
 		DiscoverItems discoverInfo = null;
 		try {
 			discoverInfo = manager.discoverNodes(null);
@@ -182,6 +179,11 @@ public class PubSubServerCrawler {
 			return;
 		}
 
+		crawl(nodeCrawlers, server, node);
+	}
+
+	private void crawl(List<NodeCrawler> nodeCrawlers, String server,
+			BuddycloudNode node) {
 		CrawlerHelper.insertNode(node, server, dataSource);
 
 		for (NodeCrawler nodeCrawler : nodeCrawlers) {
@@ -190,7 +192,7 @@ public class PubSubServerCrawler {
 					nodeCrawler.crawl(node, server);
 				}
 			} catch (Exception e) {
-				LOGGER.warn("Could not crawl node [" + nodeItem.getNode() + "] "
+				LOGGER.warn("Could not crawl node [" + node.getId() + "] "
 						+ "from server [" + server + "]", e);
 			}
 		}

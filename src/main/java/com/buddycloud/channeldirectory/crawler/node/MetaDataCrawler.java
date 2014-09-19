@@ -100,7 +100,7 @@ public class MetaDataCrawler implements NodeCrawler {
 			throw e;
 		}
 
-		DataForm form = (DataForm) discoverInfo.getExtension("jabber:x:data");
+		DataForm form = DataForm.from(discoverInfo);
 
 		ChannelData channelData = extractChannelData(nodeId, form);
 

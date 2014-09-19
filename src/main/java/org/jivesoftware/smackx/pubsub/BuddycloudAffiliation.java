@@ -1,6 +1,8 @@
 package org.jivesoftware.smackx.pubsub;
 
 import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.util.XmlStringBuilder;
+import org.jivesoftware.smackx.pubsub.packet.PubSub;
 
 public class BuddycloudAffiliation implements PacketExtension {
 
@@ -29,25 +31,17 @@ public class BuddycloudAffiliation implements PacketExtension {
 	}
 
 	public String getNamespace() {
-		return null;
+		return PubSub.NAMESPACE;
 	}
 
-	public String toXML() {
-		StringBuilder builder = new StringBuilder("<");
-		builder.append(getElementName());
-		appendAttribute(builder, "node", node);
-		appendAttribute(builder, "affiliation", type.toString());
-
-		builder.append("/>");
-		return builder.toString();
-	}
-
-	private void appendAttribute(StringBuilder builder, String att, String value) {
-		builder.append(" ");
-		builder.append(att);
-		builder.append("='");
-		builder.append(value);
-		builder.append("'");
+	@Override
+	public CharSequence toXML() {
+		XmlStringBuilder xml = new XmlStringBuilder();
+		xml.halfOpenElement(getElementName());
+		xml.optAttribute("node", node);
+		xml.optAttribute("affiliation", type.toString());
+		xml.closeEmptyElement();
+		return xml;
 	}
 
 }

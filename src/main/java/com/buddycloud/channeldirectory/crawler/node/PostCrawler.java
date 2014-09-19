@@ -74,14 +74,22 @@ public class PostCrawler implements NodeCrawler {
 	@Override
 	public void crawl(BuddycloudNode node, String server) throws Exception {
 		
-		String nodeFullJid = node.getId();
-		String[] nodeFullJidSplitted = nodeFullJid.split("/");
+		// /user/node@domain/posts
+		String nodeFullJid = null;
+		// node@domain
+		String nodeId = null;
 		
-		if (nodeFullJidSplitted.length < 4) {
-			return;
+		if (node.getId().equals("/firehose")) {
+			nodeId = node.getId();
+			nodeFullJid = node.getId();
+		} else {
+			nodeFullJid = node.getId();
+			String[] nodeFullJidSplitted = nodeFullJid.split("/");
+			if (nodeFullJidSplitted.length < 4) {
+				return;
+			}
+			nodeId = nodeFullJidSplitted[2];
 		}
-		
-		String nodeId = nodeFullJidSplitted[2];
 		
 		String afterItem = CrawlerHelper.getLastItemCrawled(
 				node, server, dataSource);
@@ -235,6 +243,6 @@ public class PostCrawler implements NodeCrawler {
 	 */
 	@Override
 	public boolean accept(BuddycloudNode node) {
-		return node.getId().endsWith("/posts");
+		return node.getId().endsWith("/posts") || node.getId().equals("/firehose");
 	}
 }
