@@ -102,8 +102,7 @@ public class PostCrawler implements NodeCrawler {
 			List<PacketExtension> returnedExtensions = new LinkedList<PacketExtension>();
 			List<Item> items = null;
 			if (lastItemId != null) {
-				RSMSet nextRsmSet = new RSMSet(
-						lastItemId, null, -1, -1, null, -1, null, -1);
+				RSMSet nextRsmSet = RSMSet.newAfter(lastItemId);
 				additionalExtensions.add(nextRsmSet);
 			}
 			items = node.getItems(additionalExtensions, returnedExtensions);
@@ -112,14 +111,16 @@ public class PostCrawler implements NodeCrawler {
 			}
 			boolean alreadySeen = false;
 			for (Item item : items) {
-				if (item.getId().equals(afterItem)) {
+				Element itemEntry = getAtomEntry(item);
+				String itemId = itemEntry.elementText("id");
+				if (itemId.equals(afterItem)) {
 					alreadySeen = true;
 					break;
 				}
 				if (firstItemId == null) {
-					firstItemId = item.getId();
+					firstItemId = itemId;
 				}
-				lastItemId = item.getId();
+				lastItemId = itemId;
 				try {
 					processPost(nodeFullJid, nodeId, item);
 				} catch (Exception e) {
@@ -140,15 +141,10 @@ public class PostCrawler implements NodeCrawler {
 		ActivityHelper.updateActivity(postData, dataSource, configuration);
 	}
 
-	@SuppressWarnings("unchecked")
 	private PostData saveToSolr(String nodeFullJid, String nodeId, Item item)
 			throws DocumentException, ParseException, SolrServerException,
 			IOException {
-		PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
-		PacketExtension payload = payloadItem.getPayload();
-		
-		Element atomEntry = DocumentHelper.parseText(
-				payload.toXML().toString()).getRootElement();
+		Element atomEntry = getAtomEntry(item);
 		
 		PostData postData = new PostData();
 		
@@ -198,6 +194,16 @@ public class PostCrawler implements NodeCrawler {
 		}
 		insert(postData);
 		return postData;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Element getAtomEntry(Item item) throws DocumentException {
+		PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
+		PacketExtension payload = payloadItem.getPayload();
+		
+		Element atomEntry = DocumentHelper.parseText(
+				payload.toXML().toString()).getRootElement();
+		return atomEntry;
 	}
 
 	private void insert(PostData postData) throws SolrServerException,

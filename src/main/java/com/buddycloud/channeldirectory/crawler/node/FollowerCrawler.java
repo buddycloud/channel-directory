@@ -224,8 +224,7 @@ public class FollowerCrawler implements NodeCrawler {
 				break;
 			}
 			
-			nextRsmSet = new RSMSet(
-					returnedRsmSet.getLast(), null, -1, -1, null, -1, null, -1);
+			nextRsmSet = RSMSet.newAfter(returnedRsmSet.getLast());
 		}
 		
 		return affiliations;

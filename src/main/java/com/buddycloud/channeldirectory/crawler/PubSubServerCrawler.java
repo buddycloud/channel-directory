@@ -232,8 +232,7 @@ public class PubSubServerCrawler {
 			DiscoverItems request = new DiscoverItems();
 			request.setTo(discoverInfo.getFrom());
 			
-			RSMSet nexRsmSet = new RSMSet(
-					rsmSet.getLast(), null, -1, -1, null, -1, null, -1);
+			RSMSet nexRsmSet = RSMSet.newAfter(rsmSet.getLast());
 			request.addExtension(nexRsmSet);
 			
 			try {

@@ -1,6 +1,7 @@
 package org.jivesoftware.smackx.pubsub;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.jivesoftware.smack.SmackException.NoResponseException;
@@ -63,6 +64,9 @@ public class BuddycloudNode {
 		}
 		ItemsExtension itemsElem = (ItemsExtension) result
 				.getExtension(PubSubElementType.ITEMS);
+		if (itemsElem == null) {
+			return new LinkedList<Item>();
+		}
 		return (List<Item>) itemsElem.getItems();
 	}
 }
