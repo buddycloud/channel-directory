@@ -3,44 +3,43 @@ package org.jivesoftware.smackx.pubsub;
 import java.util.Collections;
 import java.util.List;
 
-import org.jivesoftware.smackx.pubsub.NodeExtension;
-import org.jivesoftware.smackx.pubsub.PubSubElementType;
+import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.util.XmlStringBuilder;
+import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
-public class BuddycloudAffiliations extends NodeExtension {
+public class BuddycloudAffiliations implements PacketExtension {
 
+	public static final String ELEMENT_NAME = "affiliations";
+	
 	protected List<BuddycloudAffiliation> items = Collections.emptyList();
 
-	public BuddycloudAffiliations() {
-		super(PubSubElementType.AFFILIATIONS);
-	}
-
 	public BuddycloudAffiliations(List<BuddycloudAffiliation> subList) {
-		super(PubSubElementType.AFFILIATIONS);
 		items = subList;
 	}
 
 	public List<BuddycloudAffiliation> getAffiliations() {
 		return items;
 	}
+	
+	public String getElementName() {
+		return ELEMENT_NAME;
+	}
+
+	public String getNamespace() {
+		return PubSubNamespace.OWNER.getXmlns();
+	}
 
 	@Override
 	public CharSequence toXML() {
-		if ((items == null) || (items.size() == 0)) {
-			return super.toXML();
-		} else {
-			StringBuilder builder = new StringBuilder("<");
-			builder.append(getElementName());
-			builder.append(">");
-
-			for (BuddycloudAffiliation item : items) {
-				builder.append(item.toXML());
+		XmlStringBuilder xml = new XmlStringBuilder();
+		xml.openElement(getElementName());
+		if (items != null) {
+			for (BuddycloudAffiliation affiliation : items) {
+				xml.append(affiliation.toXML());
 			}
-
-			builder.append("</");
-			builder.append(getElementName());
-			builder.append(">");
-			return builder.toString();
 		}
+		xml.closeElement(getElementName());
+		return xml;
 	}
 
 }

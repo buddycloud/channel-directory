@@ -54,20 +54,20 @@ public class FollowerCrawler implements NodeCrawler {
 	 */
 	@Override
 	public void crawl(BuddycloudNode node, String server) throws Exception {
+		String nodeId = node.getId();
+		LOGGER.debug("Fetching followers for " + nodeId);
+		
 		List<BuddycloudAffiliation> affiliations = getAffiliations(node);
 		
-		String item = node.getId();
-		String itemJID = CrawlerHelper.getNodeId(item);
+		String nodeSimpleId = CrawlerHelper.getNodeId(nodeId);
 		
-		LOGGER.debug("Fetching followers for " + itemJID);
-		
-		if (itemJID == null) {
+		if (nodeSimpleId == null) {
 			return;
 		}
 		
 		for (BuddycloudAffiliation affiliation : affiliations) {
 			try {
-				processAffiliation(itemJID, affiliation);
+				processAffiliation(nodeSimpleId, affiliation);
 			} catch (Exception e) {
 				LOGGER.warn(e);
 			}
@@ -194,7 +194,7 @@ public class FollowerCrawler implements NodeCrawler {
 	
 	private List<BuddycloudAffiliation> getAffiliations(BuddycloudNode node) throws XMPPException {
 		
-		List<BuddycloudAffiliation> affiliations = new LinkedList<BuddycloudAffiliation>();
+		List<BuddycloudAffiliation> allAffiliations = new LinkedList<BuddycloudAffiliation>();
 		
 		RSMSet nextRsmSet = null;
 		
@@ -214,19 +214,19 @@ public class FollowerCrawler implements NodeCrawler {
 				break;
 			}
 			
-			nodeAffiliations.addAll(nodeAffiliations);
+			allAffiliations.addAll(nodeAffiliations);
 			
 			RSMSet returnedRsmSet = PacketUtil.packetExtensionfromCollection(
 					returnedExtensions, RSMSet.ELEMENT, RSMSet.NAMESPACE);
 			
 			if (returnedRsmSet == null || 
-					nodeAffiliations.size() == returnedRsmSet.getCount()) {
+					allAffiliations.size() == returnedRsmSet.getCount()) {
 				break;
 			}
 			
 			nextRsmSet = RSMSet.newAfter(returnedRsmSet.getLast());
 		}
 		
-		return affiliations;
+		return allAffiliations;
 	}
 }

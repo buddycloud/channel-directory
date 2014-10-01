@@ -13,16 +13,16 @@ public class BuddycloudPubsubManager {
 	static {
 		// Use the BuddycloudAffiliationsProvider
 		BuddycloudAffiliationsProvider affiliationsProvider = new BuddycloudAffiliationsProvider();
-		ProviderManager.addExtensionProvider(PubSubElementType.AFFILIATIONS.getElementName(), 
+		ProviderManager.addExtensionProvider(BuddycloudAffiliations.ELEMENT_NAME, 
 				PubSubNamespace.OWNER.getXmlns(), affiliationsProvider);
-		ProviderManager.addExtensionProvider(PubSubElementType.AFFILIATIONS.getElementName(), 
+		ProviderManager.addExtensionProvider(BuddycloudAffiliations.ELEMENT_NAME, 
 				PubSubNamespace.BASIC.getXmlns(), affiliationsProvider);
 		
 		// Use the BuddycloudAffiliationProvider for buddycloud-specific affiliations
 		BuddycloudAffiliationProvider affiliationProvider = new BuddycloudAffiliationProvider();
-		ProviderManager.addExtensionProvider("affiliation", 
+		ProviderManager.addExtensionProvider(BuddycloudAffiliation.ELEMENT_NAME, 
 				PubSubNamespace.OWNER.getXmlns(), affiliationProvider);
-		ProviderManager.addExtensionProvider("affiliation", 
+		ProviderManager.addExtensionProvider(BuddycloudAffiliation.ELEMENT_NAME, 
 				PubSubNamespace.BASIC.getXmlns(), affiliationProvider);
 	}
 	

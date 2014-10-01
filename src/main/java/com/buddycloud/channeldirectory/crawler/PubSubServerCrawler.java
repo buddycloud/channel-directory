@@ -130,7 +130,8 @@ public class PubSubServerCrawler {
 		try {
 			crawl(nodeCrawlers, channelServer, manager.getFirehoseNode());
 		} catch (Exception e) {
-			LOGGER.warn("Could not crawl firehose node on [" + channelServer + "]", e);
+			LOGGER.warn("Could not crawl firehose node on [" + channelServer + "]. " +
+					"Falling back to a per-node discovery.", e);
 		}
 		
 		DiscoverItems discoverInfo = null;

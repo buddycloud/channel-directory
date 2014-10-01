@@ -11,6 +11,7 @@ import org.jivesoftware.smack.packet.IQ.Type;
 import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
 import org.jivesoftware.smackx.pubsub.packet.PubSub;
+import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
 public class BuddycloudNode {
 
@@ -36,7 +37,7 @@ public class BuddycloudNode {
 			returnedExtensions.addAll(reply.getExtensions());
 		}
 		BuddycloudAffiliations affilElem = (BuddycloudAffiliations) reply
-				.getExtension(PubSubElementType.AFFILIATIONS);
+				.getExtension(BuddycloudAffiliations.ELEMENT_NAME, PubSubNamespace.OWNER.getXmlns());
 		return affilElem.getAffiliations();
 	}
 

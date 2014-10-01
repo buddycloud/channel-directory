@@ -2,10 +2,12 @@ package org.jivesoftware.smackx.pubsub;
 
 import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smack.util.XmlStringBuilder;
-import org.jivesoftware.smackx.pubsub.packet.PubSub;
+import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
 
 public class BuddycloudAffiliation implements PacketExtension {
 
+	public static final String ELEMENT_NAME = "affiliation";
+	
 	protected String node;
 	protected Type type;
 
@@ -27,11 +29,11 @@ public class BuddycloudAffiliation implements PacketExtension {
 	}
 
 	public String getElementName() {
-		return "subscription";
+		return ELEMENT_NAME;
 	}
 
 	public String getNamespace() {
-		return PubSub.NAMESPACE;
+		return PubSubNamespace.OWNER.getXmlns();
 	}
 
 	@Override
@@ -39,7 +41,7 @@ public class BuddycloudAffiliation implements PacketExtension {
 		XmlStringBuilder xml = new XmlStringBuilder();
 		xml.halfOpenElement(getElementName());
 		xml.optAttribute("node", node);
-		xml.optAttribute("affiliation", type.toString());
+		xml.optAttribute(ELEMENT_NAME, type.toString());
 		xml.closeEmptyElement();
 		return xml;
 	}

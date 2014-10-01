@@ -34,6 +34,8 @@ import org.xmpp.packet.PacketError.Type;
 public class XMPPUtils {
 
 	
+	private static final int REPLY_TIMEOUT = 10000;
+
 	/**
 	 * Logs the error and returns an IQ error response
 	 * 
@@ -116,6 +118,7 @@ public class XMPPUtils {
 		TLSUtils.acceptAllCertificates(cc);
 		
 		XMPPTCPConnection connection = new XMPPTCPConnection(cc);
+		connection.setPacketReplyTimeout(REPLY_TIMEOUT);
 		connection.connect();
 		connection.login(userName, 
 				configuration.getProperty("crawler.xmpp.password"), 
