@@ -33,6 +33,7 @@ import org.jivesoftware.smackx.rsm.packet.RSMSet;
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.crawler.node.CrawlerHelper;
 import com.buddycloud.channeldirectory.crawler.node.DiscoveryUtils;
+import com.buddycloud.channeldirectory.crawler.node.FirehoseCrawler;
 import com.buddycloud.channeldirectory.crawler.node.FollowerCrawler;
 import com.buddycloud.channeldirectory.crawler.node.MetaDataCrawler;
 import com.buddycloud.channeldirectory.crawler.node.NodeCrawler;
@@ -71,6 +72,7 @@ public class PubSubServerCrawler {
 	public void start() {
 		
 		this.nodeCrawlers = new LinkedList<NodeCrawler>();
+		nodeCrawlers.add(new FirehoseCrawler(configuration, dataSource));
 		nodeCrawlers.add(new MetaDataCrawler(configuration, dataSource));
 		nodeCrawlers.add(new PostCrawler(configuration, dataSource));
 		nodeCrawlers.add(new FollowerCrawler(dataSource));
