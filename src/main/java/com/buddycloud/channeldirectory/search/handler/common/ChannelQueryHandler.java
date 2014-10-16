@@ -17,7 +17,6 @@ package com.buddycloud.channeldirectory.search.handler.common;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -29,14 +28,13 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.dom4j.Element;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smackx.ServiceDiscoveryManager;
-import org.jivesoftware.smackx.packet.DiscoverInfo;
-import org.jivesoftware.smackx.packet.DiscoverItems;
-import org.jivesoftware.smackx.packet.DiscoverInfo.Identity;
-import org.jivesoftware.smackx.packet.DiscoverItems.Item;
-import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.PubSubManager;
+import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo.Identity;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems.Item;
+import org.jivesoftware.smackx.pubsub.BuddycloudNode;
+import org.jivesoftware.smackx.pubsub.BuddycloudPubsubManager;
 import org.xmpp.packet.IQ;
 
 import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
@@ -139,7 +137,7 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 	private ChannelData retrieveFromPubSub(String jid) {
 		try {
 			XMPPConnection connection = getConnection();
-			Node node = getNode(jid, connection);
+			BuddycloudNode node = getNode(jid, connection);
 			if (node == null) {
 				return null;
 			}
@@ -156,23 +154,23 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 		return connection;
 	}
 	
-	private Node getNode(String jid, XMPPConnection connection)
-			throws XMPPException {
+	private BuddycloudNode getNode(String jid, XMPPConnection connection)
+			throws Exception {
 		String[] splitJid = jid.split("@");
 		String serverName = splitJid[1];
-		ServiceDiscoveryManager discovery = new ServiceDiscoveryManager(connection);
+		ServiceDiscoveryManager discovery = ServiceDiscoveryManager.getInstanceFor(connection);
 		DiscoverItems discoverNodes = discovery.discoverItems(serverName);
-		Iterator<Item> items = discoverNodes.getItems();
+		List<DiscoverItems.Item> items = discoverNodes.getItems();
 		
-		while (items.hasNext()) {
-			DiscoverItems.Item item = (DiscoverItems.Item) items.next();
+		for (Item item : items) {
 			try {
 				DiscoverInfo discoverInfo = discovery.discoverInfo(item.getEntityID());
-				Identity identity = discoverInfo.getIdentities().next();
+				Identity identity = discoverInfo.getIdentities().get(0);
 				if (identity.getCategory().equals("pubsub") && 
 						identity.getType().equals("service")) {
-					PubSubManager pubsubManager = new PubSubManager(connection, item.getEntityID());
-					Node node = getNode(jid, pubsubManager);
+					BuddycloudPubsubManager pubsubManager = new BuddycloudPubsubManager(
+							connection, item.getEntityID());
+					BuddycloudNode node = getNode(jid, pubsubManager);
 					if (node != null) {
 						return node;
 					}
@@ -182,8 +180,8 @@ public abstract class ChannelQueryHandler extends AbstractQueryHandler {
 		return null;
 	}
 	
-	private Node getNode(String jid, PubSubManager pubsubManager) {
-		Node node = null;
+	private BuddycloudNode getNode(String jid, BuddycloudPubsubManager pubsubManager) {
+		BuddycloudNode node = null;
 		try {
 			node = pubsubManager.getNode("/user/" + jid + "/posts");	
 		} catch (Exception e) {}

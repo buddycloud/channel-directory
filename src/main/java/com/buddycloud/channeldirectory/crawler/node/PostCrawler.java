@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -30,14 +31,12 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
 import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.jivesoftware.smack.packet.PacketExtension;
-import org.jivesoftware.smackx.packet.RSMSet;
+import org.jivesoftware.smackx.pubsub.BuddycloudNode;
 import org.jivesoftware.smackx.pubsub.Item;
-import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.PayloadItem;
+import org.jivesoftware.smackx.rsm.packet.RSMSet;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 import com.buddycloud.channeldirectory.commons.solr.SolrServerFactory;
@@ -71,74 +70,67 @@ public class PostCrawler implements NodeCrawler {
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
 	 */
 	@Override
-	public void crawl(Node node, String server) throws Exception {
+	public void crawl(BuddycloudNode node, String server) throws Exception {
 		
-		LeafNode leafNode = (LeafNode) node;
-		
-		String nodeFullJid = node.getId();
-		String[] nodeFullJidSplitted = nodeFullJid.split("/");
-		
-		if (nodeFullJidSplitted.length < 4) {
-			return;
-		}
-		
-		String nodeId = nodeFullJidSplitted[2];
+		// /user/node@domain/posts
+		String nodeId = node.getId();
+		// node@domain
+		String channelId = CrawlerHelper.getChannelFromNode(nodeId);
 		
 		String afterItem = CrawlerHelper.getLastItemCrawled(
 				node, server, dataSource);
 				
-		String lastItemId = null;
-		String firstItemId = null;
+		String olderItemId = null;
+		String mostRecentItemId = null;
 		
 		while (true) {
+			List<PacketExtension> additionalExtensions = new LinkedList<PacketExtension>();
+			List<PacketExtension> returnedExtensions = new LinkedList<PacketExtension>();
 			List<Item> items = null;
-			RSMSet rsmSet = new RSMSet();
-			if (lastItemId != null) {
-				rsmSet.setAfter(lastItemId);
+			if (olderItemId != null) {
+				RSMSet nextRsmSet = RSMSet.newAfter(olderItemId);
+				additionalExtensions.add(nextRsmSet);
 			}
-			items = leafNode.getItems(rsmSet);
+			items = node.getItems(additionalExtensions, returnedExtensions);
 			if (items.isEmpty()) {
 				break;
 			}
-			boolean alreadySeen = false;
+			boolean done = false;
 			for (Item item : items) {
-				if (item.getId().equals(afterItem)) {
-					alreadySeen = true;
+				Element itemEntry = CrawlerHelper.getAtomEntry(item);
+				String itemId = itemEntry.elementText("id");
+				if (itemId.equals(afterItem)) {
+					done = true;
 					break;
 				}
-				if (firstItemId == null) {
-					firstItemId = item.getId();
+				if (mostRecentItemId == null) {
+					mostRecentItemId = itemId;
 				}
-				lastItemId = item.getId();
+				olderItemId = itemId;
 				try {
-					processPost(nodeFullJid, nodeId, item);
+					processPost(nodeId, channelId, item);
 				} catch (Exception e) {
 					LOGGER.warn(e);
 				}
 			}
-			if (alreadySeen) {
+			if (done) {
 				break;
 			}
 		}
-		CrawlerHelper.updateLastItemCrawled(leafNode, 
-				firstItemId, server, dataSource);
+		CrawlerHelper.updateLastItemCrawled(node, 
+				mostRecentItemId, server, dataSource);
 	}
 
-	private void processPost(String nodeFullJid, String nodeId, Item item)
+	void processPost(String nodeId, String channel, Item item)
 			throws Exception {
-		PostData postData = saveToSolr(nodeFullJid, nodeId, item);
+		PostData postData = saveToSolr(nodeId, channel, item);
 		ActivityHelper.updateActivity(postData, dataSource, configuration);
 	}
 
-	@SuppressWarnings("unchecked")
 	private PostData saveToSolr(String nodeFullJid, String nodeId, Item item)
 			throws DocumentException, ParseException, SolrServerException,
 			IOException {
-		PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
-		PacketExtension payload = payloadItem.getPayload();
-		
-		Element atomEntry = DocumentHelper.parseText(
-				payload.toXML()).getRootElement();
+		Element atomEntry = CrawlerHelper.getAtomEntry(item);
 		
 		PostData postData = new PostData();
 		
@@ -232,7 +224,7 @@ public class PostCrawler implements NodeCrawler {
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#accept(org.jivesoftware.smackx.pubsub.Node)
 	 */
 	@Override
-	public boolean accept(Node node) {
+	public boolean accept(BuddycloudNode node) {
 		return node.getId().endsWith("/posts");
 	}
 }

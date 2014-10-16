@@ -18,9 +18,14 @@ package com.buddycloud.channeldirectory.search.utils;
 import java.util.Properties;
 import java.util.Random;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smack.util.TLSUtils;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.PacketError;
 import org.xmpp.packet.PacketError.Condition;
@@ -29,6 +34,8 @@ import org.xmpp.packet.PacketError.Type;
 public class XMPPUtils {
 
 	
+	private static final int REPLY_TIMEOUT = 10000;
+
 	/**
 	 * Logs the error and returns an IQ error response
 	 * 
@@ -107,14 +114,25 @@ public class XMPPUtils {
 				Integer.parseInt(configuration.getProperty("crawler.xmpp.port")),
 				serviceName);
 		cc.setReconnectionAllowed(true);
-		cc.setSASLAuthenticationEnabled(true);
+		acceptAllHostnames(cc);
+		TLSUtils.acceptAllCertificates(cc);
 		
-		XMPPConnection connection = new XMPPConnection(cc);
+		XMPPTCPConnection connection = new XMPPTCPConnection(cc);
+		connection.setPacketReplyTimeout(REPLY_TIMEOUT);
 		connection.connect();
 		connection.login(userName, 
 				configuration.getProperty("crawler.xmpp.password"), 
-				"crawler-" + new Random().nextLong());
+				"crawler-" + Math.abs(new Random().nextLong()));
 		
 		return connection;
+	}
+
+	private static void acceptAllHostnames(ConnectionConfiguration cc) {
+		cc.setHostnameVerifier(new HostnameVerifier() {
+			@Override
+			public boolean verify(String hostname, SSLSession session) {
+				return true;
+			}
+		});
 	}
 }

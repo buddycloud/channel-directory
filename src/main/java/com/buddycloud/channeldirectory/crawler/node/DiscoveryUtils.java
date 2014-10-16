@@ -1,13 +1,12 @@
 package com.buddycloud.channeldirectory.crawler.node;
 
-import java.util.Iterator;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smackx.ServiceDiscoveryManager;
-import org.jivesoftware.smackx.packet.DiscoverInfo;
-import org.jivesoftware.smackx.packet.DiscoverItems;
+import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.disco.packet.DiscoverInfo;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Name;
@@ -68,24 +67,24 @@ public class DiscoveryUtils {
 		DiscoverItems discoverItems = null;
 		try {
 			discoverItems = pubSubManager.discoverNodes(null);
-		} catch (XMPPException e) {
+		} catch (Exception e) {
 			LOGGER.error("Error while trying to fetch domain " + domain
 					+ "node", e);
 			return null;
 		}
-		Iterator<DiscoverItems.Item> items = discoverItems.getItems();
-		while (items.hasNext()) {
-			String entityID = items.next().getEntityID();
+		List<DiscoverItems.Item> items = discoverItems.getItems();
+		for (DiscoverItems.Item item : items) {
+			String entityID = item.getEntityID();
 			DiscoverInfo discoverInfo = null;
 			try {
 				discoverInfo = discoManager.discoverInfo(entityID);
-			} catch (XMPPException e) {
+			} catch (Exception e) {
 				continue;
 			}
-			Iterator<DiscoverInfo.Identity> identities = discoverInfo
+			List<DiscoverInfo.Identity> identities = discoverInfo
 					.getIdentities();
-			while (identities.hasNext()) {
-				if (isChannelServerIdentity(identities.next())) {
+			for (DiscoverInfo.Identity identity : identities) {
+				if (isChannelServerIdentity(identity)) {
 					return entityID;
 				}
 			}

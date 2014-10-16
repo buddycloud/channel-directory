@@ -15,6 +15,7 @@
  */
 package com.buddycloud.channeldirectory.crawler.node;
 
+import org.jivesoftware.smackx.pubsub.BuddycloudNode;
 import org.jivesoftware.smackx.pubsub.Node;
 
 /**
@@ -32,7 +33,7 @@ public interface NodeCrawler {
 	 * @param server 
 	 * @throws Exception
 	 */
-	void crawl(Node node, String server) throws Exception;
+	void crawl(BuddycloudNode node, String server) throws Exception;
 	
 	
 	/**
@@ -42,5 +43,5 @@ public interface NodeCrawler {
 	 * @param node
 	 * @return
 	 */
-	boolean accept(Node node);
+	boolean accept(BuddycloudNode node);
 }

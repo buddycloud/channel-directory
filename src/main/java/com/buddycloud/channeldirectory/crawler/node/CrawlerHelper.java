@@ -20,7 +20,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
-import org.jivesoftware.smackx.pubsub.Node;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smackx.pubsub.BuddycloudNode;
+import org.jivesoftware.smackx.pubsub.Item;
+import org.jivesoftware.smackx.pubsub.PayloadItem;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 
@@ -92,7 +98,7 @@ public class CrawlerHelper {
 		
 	}
 	
-	public static void insertNode(Node node, String server, ChannelDirectoryDataSource dataSource) {
+	public static void insertNode(BuddycloudNode node, String server, ChannelDirectoryDataSource dataSource) {
 		
 		if (isNodeSubscribed(node, server, dataSource)) {
 			return;
@@ -112,7 +118,7 @@ public class CrawlerHelper {
 		
 	}
 	
-	public static void updateLastItemCrawled(Node node, String lastItemCrawled, 
+	public static void updateLastItemCrawled(BuddycloudNode node, String lastItemCrawled, 
 			String server, ChannelDirectoryDataSource dataSource) {
 		if (lastItemCrawled == null || 
 				!isNodeSubscribed(node, server, dataSource)) {
@@ -133,7 +139,7 @@ public class CrawlerHelper {
 		}
 	}
 	
-	public static String getLastItemCrawled(Node node, String server, 
+	public static String getLastItemCrawled(BuddycloudNode node, String server, 
 			ChannelDirectoryDataSource dataSource) {
 		
 		if (!isNodeSubscribed(node, server, dataSource)) {
@@ -159,7 +165,29 @@ public class CrawlerHelper {
 		}
 	}
 	
-	private static boolean isNodeSubscribed(Node node, String server, ChannelDirectoryDataSource dataSource) {
+	public static String getLastItemCrawled(String server, 
+			ChannelDirectoryDataSource dataSource) {
+		
+		PreparedStatement statement = null;
+		try {
+			statement = dataSource.prepareStatement(
+					"SELECT last_item_crawled FROM subscribed_node " +
+					"WHERE server = ? ORDER BY items_crawled DESC LIMIT 1", 
+					server);
+			ResultSet resultSet = statement.executeQuery();
+			if (resultSet.next()) {
+				return resultSet.getString("last_item_crawled");
+			}
+			return null;
+		} catch (SQLException e1) {
+			LOGGER.error("Could not retrieve last item crawled from " + server, e1);
+			return null;
+		} finally {
+			ChannelDirectoryDataSource.close(statement);
+		}
+	}
+	
+	private static boolean isNodeSubscribed(BuddycloudNode node, String server, ChannelDirectoryDataSource dataSource) {
 		
 		PreparedStatement statement = null;
 		try {
@@ -177,6 +205,24 @@ public class CrawlerHelper {
 			ChannelDirectoryDataSource.close(statement);
 		}
 		
+	}
+
+	@SuppressWarnings("unchecked")
+	public static Element getAtomEntry(Item item) throws DocumentException {
+		PayloadItem<PacketExtension> payloadItem = (PayloadItem<PacketExtension>) item;
+		PacketExtension payload = payloadItem.getPayload();
+		
+		Element atomEntry = DocumentHelper.parseText(
+				payload.toXML().toString()).getRootElement();
+		return atomEntry;
+	}
+	
+	public static String getNodeFromItemId(String itemId) {
+		return itemId.split(",")[1];
+	}
+	
+	public static String getChannelFromNode(String node) {
+		return node.split("/")[2];
 	}
 
 }
