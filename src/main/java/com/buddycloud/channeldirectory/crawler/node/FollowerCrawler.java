@@ -25,16 +25,12 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.IQ.Type;
-import org.jivesoftware.smack.provider.ProviderManager;
-import org.jivesoftware.smackx.packet.RSMSet;
-import org.jivesoftware.smackx.pubsub.Affiliation;
-import org.jivesoftware.smackx.pubsub.AffiliationsExtension;
+import org.jivesoftware.smack.packet.PacketExtension;
+import org.jivesoftware.smack.util.PacketUtil;
+import org.jivesoftware.smackx.pubsub.BuddycloudAffiliation;
+import org.jivesoftware.smackx.pubsub.BuddycloudNode;
 import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.NodeExtension;
-import org.jivesoftware.smackx.pubsub.PubSubElementType;
-import org.jivesoftware.smackx.pubsub.packet.PubSub;
-import org.jivesoftware.smackx.pubsub.packet.PubSubNamespace;
+import org.jivesoftware.smackx.rsm.packet.RSMSet;
 
 import com.buddycloud.channeldirectory.commons.db.ChannelDirectoryDataSource;
 
@@ -51,37 +47,27 @@ public class FollowerCrawler implements NodeCrawler {
 	
 	public FollowerCrawler(ChannelDirectoryDataSource dataSource) {
 		this.dataSource = dataSource;
-		
-		Object affiliationsProvider = ProviderManager.getInstance().getExtensionProvider(
-				PubSubElementType.AFFILIATIONS.getElementName(), PubSubNamespace.BASIC.getXmlns());
-		ProviderManager.getInstance().addExtensionProvider(PubSubElementType.AFFILIATIONS.getElementName(), 
-				PubSubNamespace.OWNER.getXmlns(), affiliationsProvider);
-		
-		Object affiliationProvider = ProviderManager.getInstance().getExtensionProvider(
-				"affiliation", PubSubNamespace.BASIC.getXmlns());
-		ProviderManager.getInstance().addExtensionProvider("affiliation", 
-				PubSubNamespace.OWNER.getXmlns(), affiliationProvider);
 	}
 
 	/* (non-Javadoc)
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#crawl(org.jivesoftware.smackx.pubsub.Node)
 	 */
 	@Override
-	public void crawl(Node node, String server) throws Exception {
-		List<Affiliation> affiliations = getAffiliations(node);
+	public void crawl(BuddycloudNode node, String server) throws Exception {
+		String nodeId = node.getId();
+		LOGGER.debug("Fetching followers for " + nodeId);
 		
-		String item = node.getId();
-		String itemJID = CrawlerHelper.getNodeId(item);
+		List<BuddycloudAffiliation> affiliations = getAffiliations(node);
 		
-		LOGGER.debug("Fetching followers for " + itemJID);
+		String nodeSimpleId = CrawlerHelper.getNodeId(nodeId);
 		
-		if (itemJID == null) {
+		if (nodeSimpleId == null) {
 			return;
 		}
 		
-		for (Affiliation affiliation : affiliations) {
+		for (BuddycloudAffiliation affiliation : affiliations) {
 			try {
-				processAffiliation(itemJID, affiliation);
+				processAffiliation(nodeSimpleId, affiliation);
 			} catch (Exception e) {
 				LOGGER.warn(e);
 			}
@@ -95,7 +81,7 @@ public class FollowerCrawler implements NodeCrawler {
 		
 	}
 
-	private void processAffiliation(String itemJID, Affiliation affiliation)
+	private void processAffiliation(String itemJID, BuddycloudAffiliation affiliation)
 			throws SQLException {
 		String user = affiliation.getNodeId();
 		
@@ -202,39 +188,45 @@ public class FollowerCrawler implements NodeCrawler {
 	 * @see com.buddycloud.channeldirectory.crawler.node.NodeCrawler#accept(org.jivesoftware.smackx.pubsub.Node)
 	 */
 	@Override
-	public boolean accept(Node node) {
+	public boolean accept(BuddycloudNode node) {
 		return node.getId().endsWith("/posts");
 	}
 	
-	private List<Affiliation> getAffiliations(Node node) throws XMPPException {
+	private List<BuddycloudAffiliation> getAffiliations(BuddycloudNode node) throws XMPPException {
 		
-		List<Affiliation> affiliations = new LinkedList<Affiliation>();
+		List<BuddycloudAffiliation> allAffiliations = new LinkedList<BuddycloudAffiliation>();
 		
-		PubSub request = node.createPubsubPacket(Type.GET, 
-				new NodeExtension(PubSubElementType.AFFILIATIONS, node.getId()), 
-				PubSubNamespace.OWNER);
+		RSMSet nextRsmSet = null;
 		
 		while (true) {
 			
-			PubSub reply = (PubSub) node.sendPubsubPacket(Type.GET, request);
+			List<PacketExtension> additionalExtensions = new LinkedList<PacketExtension>();
+			List<PacketExtension> returnedExtensions = new LinkedList<PacketExtension>();
+			if (nextRsmSet != null) {
+				additionalExtensions.add(nextRsmSet);
+			}
 			
-			AffiliationsExtension subElem = (AffiliationsExtension) reply.getExtension(
-					PubSubElementType.AFFILIATIONS.getElementName(), PubSubNamespace.BASIC.getXmlns());
-			
-			affiliations.addAll(subElem.getAffiliations());
-			
-			if (reply.getRsmSet() == null || 
-					affiliations.size() == reply.getRsmSet().getCount()) {
+			List<BuddycloudAffiliation> nodeAffiliations = null;
+			try {
+				nodeAffiliations = node.getBuddycloudAffiliations(
+						additionalExtensions, returnedExtensions);
+			} catch (Exception e) {
 				break;
 			}
 			
-			RSMSet rsmSet = new RSMSet();
-			rsmSet.setAfter(reply.getRsmSet().getLast());
-			request.setRsmSet(rsmSet);
+			allAffiliations.addAll(nodeAffiliations);
 			
+			RSMSet returnedRsmSet = PacketUtil.packetExtensionfromCollection(
+					returnedExtensions, RSMSet.ELEMENT, RSMSet.NAMESPACE);
+			
+			if (returnedRsmSet == null || 
+					allAffiliations.size() == returnedRsmSet.getCount()) {
+				break;
+			}
+			
+			nextRsmSet = RSMSet.newAfter(returnedRsmSet.getLast());
 		}
 		
-		return affiliations;
+		return allAffiliations;
 	}
-	
 }

@@ -18,7 +18,8 @@ package com.buddycloud.channeldirectory.crawler;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jivesoftware.smack.Connection;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smackx.pubsub.BuddycloudPubsubManager;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 
 /**
@@ -29,17 +30,17 @@ import org.jivesoftware.smackx.pubsub.PubSubManager;
  */
 public class PubSubManagers {
 
-	private final Map<String, PubSubManager> pubSubManagers = new HashMap<String, PubSubManager>();
-	private final Connection connection;
+	private final Map<String, BuddycloudPubsubManager> pubSubManagers = new HashMap<String, BuddycloudPubsubManager>();
+	private final XMPPConnection connection;
 	
-	public PubSubManagers(Connection connection) {
+	public PubSubManagers(XMPPConnection connection) {
 		this.connection = connection;
 	}
 
-	public PubSubManager getPubSubManager(String pubSubServer) {
-		PubSubManager pubSubManager = pubSubManagers.get(pubSubServer);
+	public BuddycloudPubsubManager getPubSubManager(String pubSubServer) {
+		BuddycloudPubsubManager pubSubManager = pubSubManagers.get(pubSubServer);
 		if (pubSubManager == null) {
-			pubSubManager = new PubSubManager(connection, pubSubServer);
+			pubSubManager = new BuddycloudPubsubManager(connection, pubSubServer);
 			pubSubManagers.put(pubSubServer, pubSubManager);
 		}
 		return pubSubManager;
@@ -48,7 +49,7 @@ public class PubSubManagers {
 	/**
 	 * @return
 	 */
-	public Connection getConnection() {
+	public XMPPConnection getConnection() {
 		return connection;
 	}
 	
