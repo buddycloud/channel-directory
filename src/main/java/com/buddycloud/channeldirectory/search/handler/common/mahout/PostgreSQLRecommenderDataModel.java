@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Logger;
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLBooleanPrefJDBCDataModel;
@@ -42,6 +43,8 @@ import com.buddycloud.channeldirectory.search.handler.response.ChannelData;
  */
 public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataModel {
 
+	private static Logger LOGGER = Logger.getLogger(PostgreSQLRecommenderDataModel.class);
+	
 	private static final int REFRESH_DELAY = 30; // Minutes
 	
 	private ChannelDirectoryDataSource dataSource;
@@ -68,7 +71,11 @@ public class PostgreSQLRecommenderDataModel implements ChannelRecommenderDataMod
 		scheduledThreadPool.scheduleWithFixedDelay(new Runnable() {
 			@Override
 			public void run() {
-				dataModel.refresh(new LinkedList<Refreshable>());
+				try {
+					dataModel.refresh(new LinkedList<Refreshable>());
+				} catch (Throwable t) {
+					LOGGER.warn("Could not reload mahout JDBC model.", t);
+				}
 			}
 		}, REFRESH_DELAY, REFRESH_DELAY, TimeUnit.MINUTES);
 	}
