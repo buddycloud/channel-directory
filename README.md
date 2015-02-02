@@ -39,6 +39,7 @@ Channel directory should support RSM-able queries, just like XEP-0059.
 Right now, the directory is running at the host crater.buddycloud.org, under the address search.buddycloud.org.
 
 Show me nearby topic channels
+-----------------------------
 
 - data comes from the channel metadata
 - Topic channels are tagged with a lat/long.
@@ -93,6 +94,8 @@ Protocol response
 ```
 
 Recommend me channels to follow
+-------------------------------
+
 - data comes from the channel subscriber data (do we treat moderator roles differently? does affiliation data add any value at all?)
 - probably Apache Mahout
 - input: use the quering jid
@@ -148,6 +151,8 @@ Protocol response
 ```
 
 Show similar channels
+---------------------
+
 - "Show me 3 topic channels similar to coffee@coffee-lovers.com"
 - "I recommend espressofreaks@java-junkies.com, brewmeisters@coffee.com and beangrinderdude@wide-awake.com"
 - input: channel jid
@@ -199,6 +204,8 @@ Protocol response
 ```
 
 Search channel metadata
+-----------------------
+
 - data comes from channel descriptions and title
 - probably based on Apache Solr
 - Should geolocation be also returned here?
@@ -247,6 +254,8 @@ Protocol response
 </iq>
 ```
 Search the contents of channel posts
+------------------------------------
+
 - data comes from comes from channel posts
 - probably based on Apache Solr
 
